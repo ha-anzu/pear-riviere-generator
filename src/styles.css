@@ -1,0 +1,186 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Outfit:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@500;700&display=swap");
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-background: #0c0b0a;
+  --color-foreground: #f4f0e8;
+  --color-card: #141210;
+  --color-card-foreground: #f4f0e8;
+  --color-popover: #171410;
+  --color-popover-foreground: #f4f0e8;
+  --color-muted: #1c1916;
+  --color-muted-foreground: #a3988c;
+  --color-border: #2c2722;
+  --color-input: #2c2722;
+  --color-primary: #ece6da;
+  --color-primary-foreground: #141210;
+  --color-secondary: #1c1916;
+  --color-secondary-foreground: #ece6da;
+  --color-accent: #24201c;
+  --color-accent-foreground: #ece6da;
+  --color-destructive: #b5453a;
+  --color-ring: #ece6da;
+  --color-gold: #c4a574;
+  --color-silver: #c5c8ce;
+  --color-velvet: #100e0c;
+  --color-neon: #c4a574;
+  --color-metal-yellow: #d4a017;
+  --color-metal-white: #c0c0c8;
+  --color-metal-rose: #c98a7a;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius: 10px;
+}
+
+html[data-theme="cyber"] {
+  --font-sans: "IBM Plex Mono", ui-monospace, monospace;
+  --font-display: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-background: #0a0a0f;
+  --color-foreground: #e5e7eb;
+  --color-card: #080205;
+  --color-card-foreground: #e5e7eb;
+  --color-popover: #0c0608;
+  --color-popover-foreground: #e5e7eb;
+  --color-muted: #12080c;
+  --color-muted-foreground: #9ca3af;
+  --color-border: #5a1224;
+  --color-input: #5a1224;
+  --color-primary: #ffcc00;
+  --color-primary-foreground: #0a0a0f;
+  --color-secondary: #16080c;
+  --color-secondary-foreground: #ffcc00;
+  --color-accent: #220810;
+  --color-accent-foreground: #ffcc00;
+  --color-destructive: #ff0033;
+  --color-ring: #ffcc00;
+  --color-gold: #ffcc00;
+  --color-silver: #c5c8ce;
+  --color-velvet: #050508;
+  --color-neon: #ff0033;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius: 2px;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    font-family: var(--font-display);
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+html[data-theme="cyber"] h1,
+html[data-theme="cyber"] h2,
+html[data-theme="cyber"] h3 {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+html[data-theme="cyber"] .rounded-2xl {
+  border-radius: 4px;
+}
+html[data-theme="cyber"] .rounded-xl {
+  border-radius: 4px;
+}
+html[data-theme="cyber"] .rounded-lg {
+  border-radius: 2px;
+}
+html[data-theme="cyber"] .rounded-md {
+  border-radius: 2px;
+}
+
+html[data-theme="cyber"] body::after {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 3px,
+    rgb(255 0 51 / 0.035) 4px
+  );
+}
+
+html[data-theme="cyber"] .cyber-glow {
+  color: var(--color-neon);
+  text-shadow: 0 0 12px rgb(255 0 51 / 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html[data-theme="cyber"] body::after {
+    display: none;
+  }
+}
+
+@media print {
+  body {
+    background: white;
+    color: #111;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
