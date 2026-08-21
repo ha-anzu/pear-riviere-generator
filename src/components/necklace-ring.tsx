@@ -6,13 +6,17 @@ import type {
   PatternResult,
   StationKind,
 } from "@/lib/necklace/engine";
-import { formatPearSize, stationLabel } from "@/lib/necklace/engine";
+import { formatPearSize, formatSize, pearShoulderRotation, stationLabel } from "@/lib/necklace/engine";
+import { gemColorAt, type GemColorKey } from "@/lib/necklace/gem-colors";
 
 type Pos = {
   x: number;
   y: number;
   r: number;
   size: number;
+  lengthMm: number;
+  widthMm: number;
+  ratio: number;
   index: number;
   ang: number;
   startAng: number;
@@ -32,31 +36,34 @@ function layoutStations(
   if (stations.length === 0) return [];
   const totalMm = Math.max(
     0.001,
-    stations.reduce((a, s) => a + s.sizeMm + gapMm, 0),
+    stations.reduce((a, s) => a + s.widthMm + gapMm, 0),
   );
   const braceletMm = stations.reduce(
-    (a, s) => (BACK_KINDS.has(s.kind) ? a + s.sizeMm + gapMm : a),
+    (a, s) => (BACK_KINDS.has(s.kind) ? a + s.widthMm + gapMm : a),
     0,
   );
   const mmToAngle = (mm: number) => (mm / totalMm) * Math.PI * 2;
   let ang = -Math.PI / 2 - mmToAngle(braceletMm) / 2;
   return stations.map((s, index) => {
     const startAng = ang;
-    ang += mmToAngle(s.sizeMm / 2);
+    ang += mmToAngle(s.widthMm / 2);
     const mid = ang;
     const x = Number((cx + R * Math.cos(mid)).toFixed(3));
     const y = Number((cy + R * Math.sin(mid)).toFixed(3));
-    const r = Number(((s.sizeMm * Math.PI * R) / totalMm).toFixed(3));
-    ang += mmToAngle(s.sizeMm / 2 + gapMm);
+    const r = Number(((s.widthMm * Math.PI * R) / totalMm).toFixed(3));
+    ang += mmToAngle(s.widthMm / 2 + gapMm);
     return {
       x,
       y,
       r,
       size: s.sizeMm,
+      lengthMm: s.lengthMm,
+      widthMm: s.widthMm,
+      ratio: s.lengthMm / Math.max(s.widthMm, 0.1),
       index,
       ang: mid,
       startAng,
-      endAng: startAng + mmToAngle(s.sizeMm),
+      endAng: startAng + mmToAngle(s.widthMm),
       kind: s.kind,
     };
   });
@@ -133,11 +140,13 @@ export function NecklaceRing({
   selectedIndex,
   onSelect,
   metalColor,
+  gemColors,
 }: {
   result: PatternResult;
   selectedIndex: number | null;
   onSelect: (index: number | null) => void;
   metalColor: MetalColor;
+  gemColors: GemColorKey[];
 }) {
   const size = 720;
   const cx = size / 2;
@@ -262,17 +271,28 @@ export function NecklaceRing({
           key={p.index}
           transform={`translate(${p.x}, ${p.y})`}
           className="cursor-pointer"
+          tabIndex={0}
+          role="button"
+          aria-label={`${stationLabel(p.kind)} stone ${p.index + 1}, ${formatSize(p.size)} millimeters`}
           onClick={(e) => {
             e.stopPropagation();
             onSelect(p.index === selectedIndex ? null : p.index);
           }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              event.stopPropagation();
+              onSelect(p.index === selectedIndex ? null : p.index);
+            }
+          }}
         >
-          <g transform={`rotate(${(((p.ang * 180) / Math.PI) - 90).toFixed(3)})`}>
+          <g transform={`rotate(${pearShoulderRotation(p.x, p.y, p.ang, cx, cy).toFixed(3)})`}>
           <PearMark
             r={Math.max(1.6, p.r)}
             metal={metal}
             metalColor={metalColor}
-            aspectRatio={result.ratio}
+            gemColor={gemColorAt(gemColors, p.index)}
+            aspectRatio={p.ratio}
             selected={p.index === selectedIndex}
           />
           </g>
@@ -334,11 +354,13 @@ export function StrandView({
   selectedIndex,
   onSelect,
   metalColor,
+  gemColors,
 }: {
   result: PatternResult;
   selectedIndex: number | null;
   onSelect: (index: number | null) => void;
   metalColor: MetalColor;
+  gemColors: GemColorKey[];
 }) {
   const metal = result.metal;
   const paint = METAL_PAINT[metalColor];
@@ -350,12 +372,13 @@ export function StrandView({
       </div>
     );
   }
-  const maxD = Math.max(...stations.map((s) => s.sizeMm));
-  const scale = 9 / maxD;
+  const maxW = Math.max(...stations.map((s) => s.widthMm));
+  const maxL = Math.max(...stations.map((s) => s.lengthMm));
+  const scale = 9 / Math.max(maxW, 0.1);
   const pad = 16;
-  const widths = stations.map((s) => s.sizeMm * scale * 2 + 4);
+  const widths = stations.map((s) => s.widthMm * scale * 2 + 4);
   const totalW = widths.reduce((a, b) => a + b, 0) + pad * 2;
-  const h = 72;
+  const h = Math.max(72, maxL * scale * 2 + 28);
 
   let x = pad;
   const items = stations.map((s, i) => {
@@ -366,7 +389,7 @@ export function StrandView({
       ...s,
       i,
       cx: Number(cx.toFixed(3)),
-      r: Number(Math.max(2.2, s.sizeMm * scale).toFixed(3)),
+      r: Number(Math.max(2.2, s.widthMm * scale).toFixed(3)),
       x0: Number((cx - w / 2).toFixed(3)),
       w: Number(w.toFixed(3)),
     };
@@ -438,13 +461,23 @@ export function StrandView({
               key={it.i}
               transform={`translate(${it.cx}, ${h / 2 + 4})`}
               className="cursor-pointer"
+              tabIndex={0}
+              role="button"
+              aria-label={`${stationLabel(it.kind)} stone ${it.i + 1}, ${formatSize(it.sizeMm)} millimeters`}
               onClick={() => onSelect(it.i === selectedIndex ? null : it.i)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelect(it.i === selectedIndex ? null : it.i);
+                }
+              }}
             >
               <PearMark
                 r={it.r}
                 metal={metal}
                 metalColor={metalColor}
-                aspectRatio={result.ratio}
+                gemColor={gemColorAt(gemColors, it.i)}
+                aspectRatio={it.lengthMm / Math.max(it.widthMm, 0.1)}
                 selected={it.i === selectedIndex}
               />
               <title>{stationLabel(it.kind)}</title>

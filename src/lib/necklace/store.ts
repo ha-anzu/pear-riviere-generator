@@ -11,16 +11,23 @@ import {
   type SavedConfig,
   type Variant,
   DEFAULT_PEAR_RATIO,
-  METAL,
+  DEFAULT_PEAR_SKU,
   buildPattern,
   defaultMetalColor,
   defaultPrices,
+  pearRatioOf,
+  resolvePearSku,
   searchByTarget,
-  snapSize,
   styleVariants,
 } from "./engine";
 import { newProjectId } from "./history";
 import { PRESETS, type Preset } from "./presets";
+import {
+  gemColorAt,
+  normalizeGemColors,
+  type ColorScope,
+  type GemColorKey,
+} from "./gem-colors";
 
 export type AtelierState = {
   metal: Metal;
@@ -32,6 +39,8 @@ export type AtelierState = {
   mode: PatternMode;
   minSize: number;
   maxSize: number;
+  minWidth: number;
+  maxWidth: number;
   list: ListLine[];
   prices: PriceBracket[];
   pricesDirty: boolean;
@@ -39,6 +48,8 @@ export type AtelierState = {
   targetCt: string;
   budget: string;
   selectedIndex: number | null;
+  gemColors: GemColorKey[];
+  colorScope: ColorScope;
   projectId: string;
   projectName: string;
   notes: string;
@@ -53,9 +64,9 @@ export type AtelierState = {
   setGap: (gapMm: number) => void;
   setRatio: (ratio: number) => void;
   setMode: (mode: PatternMode) => void;
-  setMin: (minSize: number) => void;
-  setMax: (maxSize: number) => void;
-  setSingle: (size: number) => void;
+  setMin: (minSize: number, minWidth?: number) => void;
+  setMax: (maxSize: number, maxWidth?: number) => void;
+  setSingle: (size: number, width?: number) => void;
   setList: (list: ListLine[]) => void;
   addListRow: () => void;
   removeListRow: (index: number) => void;
@@ -65,6 +76,8 @@ export type AtelierState = {
   setTargetCt: (v: string) => void;
   setBudget: (v: string) => void;
   setSelected: (index: number | null) => void;
+  setColorScope: (scope: ColorScope) => void;
+  paintGem: (color: GemColorKey) => void;
   setProjectId: (v: string) => void;
   setProjectName: (v: string) => void;
   setNotes: (v: string) => void;
@@ -87,6 +100,8 @@ function compute(
     | "mode"
     | "minSize"
     | "maxSize"
+    | "minWidth"
+    | "maxWidth"
     | "list"
     | "prices"
     | "autoGapFromList"
@@ -101,6 +116,8 @@ function compute(
     mode: s.mode,
     minSize: s.minSize,
     maxSize: s.maxSize,
+    minWidth: s.minWidth,
+    maxWidth: s.maxWidth,
     list: s.list,
     prices: s.prices,
     autoGapFromList: s.autoGapFromList,
@@ -125,11 +142,13 @@ const seed = {
   lengthIn: 16 as LengthIn,
   braceletIn: 7 as BraceletIn,
   gapMm: 0.28,
-  ratio: DEFAULT_PEAR_RATIO,
+  ratio: pearRatioOf(DEFAULT_PEAR_SKU),
   mode: "range" as PatternMode,
-  minSize: 2.5,
-  maxSize: 2.5,
-  list: [{ sizeMm: 2.5, pcs: 134 }] as ListLine[],
+  minSize: 5,
+  maxSize: 5,
+  minWidth: 3,
+  maxWidth: 3,
+  list: [{ sizeMm: 5, widthMm: 3, pcs: 38 }] as ListLine[],
   prices: defaultPrices(initialMetal),
   autoGapFromList: true,
   projectId: "PR-DRAFT",
@@ -145,18 +164,14 @@ export const useAtelier = create<AtelierState>((set, get) => ({
   targetCt: "",
   budget: "",
   selectedIndex: null,
+  gemColors: [],
+  colorScope: "pair",
   result: computed.result,
   variants: computed.variants,
   matches: [],
 
   setMetal: (metal) =>
     set((s) => {
-      const minSize = snapSize(s.minSize, metal);
-      const maxSize = snapSize(s.maxSize, metal);
-      const list = s.list.map((l) => ({
-        ...l,
-        sizeMm: snapSize(l.sizeMm, metal),
-      }));
       const prices = s.pricesDirty ? s.prices : defaultPrices(metal);
       const metalColor =
         s.metalColor === "yellow" && metal === "silver"
@@ -168,9 +183,6 @@ export const useAtelier = create<AtelierState>((set, get) => ({
         ...s,
         metal,
         metalColor,
-        minSize,
-        maxSize,
-        list,
         prices,
         matches: [],
       };
@@ -209,26 +221,47 @@ export const useAtelier = create<AtelierState>((set, get) => ({
       return { ...next, ...compute(next) };
     }),
 
-  setMin: (minSize) =>
+  setMin: (minSize, minWidth) =>
     set((s) => {
-      const v = snapSize(minSize, s.metal);
-      const maxSize = Math.max(s.maxSize, v);
-      const next = { ...s, minSize: v, maxSize };
+      const sku = resolvePearSku(minSize, minWidth ?? s.minWidth);
+      const maxSku = resolvePearSku(Math.max(s.maxSize, sku.lengthMm), s.maxWidth);
+      const next = {
+        ...s,
+        minSize: sku.lengthMm,
+        minWidth: sku.widthMm,
+        maxSize: maxSku.lengthMm,
+        maxWidth: maxSku.widthMm,
+        ratio: pearRatioOf(sku),
+      };
       return { ...next, ...compute(next) };
     }),
 
-  setMax: (maxSize) =>
+  setMax: (maxSize, maxWidth) =>
     set((s) => {
-      const v = snapSize(maxSize, s.metal);
-      const minSize = Math.min(s.minSize, v);
-      const next = { ...s, maxSize: v, minSize };
+      const sku = resolvePearSku(maxSize, maxWidth ?? s.maxWidth);
+      const minSku = resolvePearSku(Math.min(s.minSize, sku.lengthMm), s.minWidth);
+      const next = {
+        ...s,
+        maxSize: sku.lengthMm,
+        maxWidth: sku.widthMm,
+        minSize: minSku.lengthMm,
+        minWidth: minSku.widthMm,
+        ratio: pearRatioOf(minSku),
+      };
       return { ...next, ...compute(next) };
     }),
 
-  setSingle: (size) =>
+  setSingle: (size, width) =>
     set((s) => {
-      const v = snapSize(size, s.metal);
-      const next = { ...s, minSize: v, maxSize: v };
+      const sku = resolvePearSku(size, width ?? s.minWidth);
+      const next = {
+        ...s,
+        minSize: sku.lengthMm,
+        maxSize: sku.lengthMm,
+        minWidth: sku.widthMm,
+        maxWidth: sku.widthMm,
+        ratio: pearRatioOf(sku),
+      };
       return { ...next, ...compute(next) };
     }),
 
@@ -240,8 +273,8 @@ export const useAtelier = create<AtelierState>((set, get) => ({
 
   addListRow: () =>
     set((s) => {
-      const sizeMm = s.maxSize || METAL[s.metal].min;
-      const list = [...s.list, { sizeMm, pcs: 10 }];
+      const sku = resolvePearSku(s.maxSize, s.maxWidth);
+      const list = [...s.list, { sizeMm: sku.lengthMm, widthMm: sku.widthMm, pcs: 10 }];
       const next = { ...s, list };
       return { ...next, ...compute(next) };
     }),
@@ -280,6 +313,23 @@ export const useAtelier = create<AtelierState>((set, get) => ({
   setTargetCt: (targetCt) => set({ targetCt }),
   setBudget: (budget) => set({ budget }),
   setSelected: (selectedIndex) => set({ selectedIndex }),
+  setColorScope: (colorScope) => set({ colorScope }),
+  paintGem: (color) =>
+    set((s) => {
+      if (s.selectedIndex == null) return s;
+      const total = s.result.totalPcs;
+      const selected = s.selectedIndex;
+      const mirror = total - 1 - selected;
+      const gemColors = Array.from({ length: total }, (_, index) =>
+        gemColorAt(s.gemColors, index),
+      );
+      if (s.colorScope === "all") gemColors.fill(color);
+      else {
+        gemColors[selected] = color;
+        if (s.colorScope === "pair") gemColors[mirror] = color;
+      }
+      return { gemColors };
+    }),
   setProjectId: (projectId) => set({ projectId }),
   setProjectName: (projectName) => set({ projectName }),
   setNotes: (notes) => set({ notes }),
@@ -305,10 +355,13 @@ export const useAtelier = create<AtelierState>((set, get) => ({
         mode: preset.mode,
         minSize: preset.minSize,
         maxSize: preset.maxSize,
+        minWidth: preset.minWidth ?? resolvePearSku(preset.minSize).widthMm,
+        maxWidth: preset.maxWidth ?? resolvePearSku(preset.maxSize).widthMm,
         list: preset.list.map((l) => ({ ...l })),
         autoGapFromList: preset.autoGapFromList,
         prices,
         selectedIndex: null,
+        gemColors: [],
         matches: [],
         projectId: newProjectId(),
         projectName: preset.projectName ?? preset.name,
@@ -343,6 +396,8 @@ export const useAtelier = create<AtelierState>((set, get) => ({
         mode: cfg.mode,
         minSize: cfg.minSize,
         maxSize: cfg.maxSize,
+        minWidth: cfg.minWidth ?? resolvePearSku(cfg.minSize).widthMm,
+        maxWidth: cfg.maxWidth ?? resolvePearSku(cfg.maxSize).widthMm,
         list: cfg.list.map((l) => ({ ...l })),
         prices: cfg.prices,
         pricesDirty: true,
@@ -350,6 +405,8 @@ export const useAtelier = create<AtelierState>((set, get) => ({
         targetCt: cfg.targetCt != null ? String(cfg.targetCt) : "",
         budget: cfg.budget != null ? String(cfg.budget) : "",
         selectedIndex: null,
+        gemColors: normalizeGemColors(cfg.gemColors),
+        colorScope: cfg.colorScope ?? "pair",
         matches: [],
         projectId: cfg.projectId || newProjectId(),
         projectName: cfg.projectName ?? "",
@@ -369,6 +426,8 @@ export const useAtelier = create<AtelierState>((set, get) => ({
       mode: s.mode,
       minSize: s.minSize,
       maxSize: s.maxSize,
+      minWidth: s.minWidth,
+      maxWidth: s.maxWidth,
       list: s.list,
       prices: s.prices,
       autoGapFromList: s.autoGapFromList,
@@ -378,6 +437,8 @@ export const useAtelier = create<AtelierState>((set, get) => ({
       projectId: s.projectId,
       projectName: s.projectName,
       notes: s.notes,
+      gemColors: s.gemColors,
+      colorScope: s.colorScope,
     };
   },
 

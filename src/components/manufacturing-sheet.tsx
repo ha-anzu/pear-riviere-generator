@@ -13,10 +13,15 @@ import {
   type SegmentFit,
 } from "@/lib/necklace/engine";
 import { cn } from "@/lib/utils";
+import { useAtelier } from "@/lib/necklace/store";
+import { formatColorPlan } from "@/lib/necklace/gem-colors";
 
 export function ManufacturingSheet({ result }: { result: PatternResult }) {
+  const gemColors = useAtelier((state) => state.gemColors);
   const copy = async () => {
-    await copyText(formatBomText(result));
+    await copyText(
+      `${formatBomText(result)}\n\nCOLOR PLAN\n${formatColorPlan(gemColors, result.totalPcs)}`,
+    );
     toast.success("Sheet copied");
   };
 

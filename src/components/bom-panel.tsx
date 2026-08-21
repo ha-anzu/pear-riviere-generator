@@ -13,17 +13,23 @@ import {
 } from "@/lib/necklace/engine";
 import { useAtelier } from "@/lib/necklace/store";
 import { cn } from "@/lib/utils";
+import { formatColorPlan, gemColorCounts } from "@/lib/necklace/gem-colors";
 
 export function BomPanel() {
-  const { result, variants, matches, applyVariant } = useAtelier();
+  const { result, variants, matches, applyVariant, gemColors } = useAtelier();
 
   const copy = async () => {
-    await copyText(formatBomText(result));
+    await copyText(
+      `${formatBomText(result)}\n\nCOLOR PLAN\n${formatColorPlan(gemColors, result.totalPcs)}`,
+    );
     toast.success("BOM copied");
   };
 
   const download = () => {
-    const blob = new Blob([csvBom(result)], { type: "text/csv;charset=utf-8" });
+    const colorRows = gemColorCounts(gemColors, result.totalPcs)
+      .map((item) => `color,${item.label},${item.count}`)
+      .join("\n");
+    const blob = new Blob([`${csvBom(result)}\n${colorRows}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

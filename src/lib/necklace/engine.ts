@@ -1,3 +1,25 @@
+import {
+  DEFAULT_PEAR_SKU,
+  PEAR_CATALOG,
+  catalogBetween,
+  formatPearSku,
+  pearRatioOf,
+  resolvePearSku,
+  type PearSku,
+} from "./pear-catalog.ts";
+
+export type { PearSku };
+export {
+  DEFAULT_PEAR_SKU,
+  PEAR_CATALOG,
+  formatPearSku,
+  pearRatioOf,
+  pearSkuById,
+  pearSkuId,
+  pearSkuOptionLabel,
+  resolvePearSku,
+} from "./pear-catalog.ts";
+
 export type Metal = "gold" | "silver";
 export type PatternMode = "range" | "list";
 export type MetalColor = "yellow" | "white" | "rose";
@@ -45,12 +67,12 @@ export const LOCK_FEMALE = 2;
 export const LOCK_MALE = 1;
 export const CONVERTER_STONES = 1;
 export const MM_PER_INCH = 25.4;
-export const DEFAULT_PEAR_RATIO = 1.5;
-export const PEAR_RATIO_MIN = 1.3;
+export const DEFAULT_PEAR_RATIO = pearRatioOf(DEFAULT_PEAR_SKU);
+export const PEAR_RATIO_MIN = 1.25;
 export const PEAR_RATIO_MAX = 1.8;
 export const PEAR_DEPTH_FACTOR = 0.61;
 export const PEAR_ORIENTATION =
-  "Point-to-center: every pear point faces inward; the center pear's rounded lobe rests at 6 o'clock.";
+  "Tip-out: every pear tip points radially away from the necklace center; the rounded lobe faces the neck. Strand pitch is pear width + gap." ;
 
 export type StationKind =
   | "lock1-f"
@@ -93,7 +115,10 @@ export type PriceBracket = {
 };
 
 export type ListLine = {
+  /** Pear length (mm). */
   sizeMm: number;
+  /** Pear width (mm). Required for catalog SKUs that share a length. */
+  widthMm?: number;
   pcs: number;
 };
 
@@ -147,6 +172,8 @@ export type PatternInput = {
   mode: PatternMode;
   minSize: number;
   maxSize: number;
+  minWidth?: number;
+  maxWidth?: number;
   list: ListLine[];
   prices: PriceBracket[];
   /** Honor list pcs exactly and back-solve gap (may fall outside 0.2–0.5). */
@@ -240,24 +267,52 @@ export function normalizeRatio(ratio: number): number {
   return round2(clamp(ratio || DEFAULT_PEAR_RATIO, PEAR_RATIO_MIN, PEAR_RATIO_MAX));
 }
 
-export function pearWidth(length: number, ratio = DEFAULT_PEAR_RATIO): number {
-  return round2(Math.max(0.1, length) / normalizeRatio(ratio));
+export function skuOf(length: number, width?: number, ratio = DEFAULT_PEAR_RATIO): PearSku {
+  if (width && width > 0) return resolvePearSku(length, width);
+  const fromLength = resolvePearSku(length);
+  if (Math.abs(fromLength.lengthMm - round1(length)) < 0.05) return fromLength;
+  const widthMm = round2(Math.max(0.1, length) / normalizeRatio(ratio));
+  return resolvePearSku(length, widthMm);
+}
+
+export function pearWidth(length: number, ratio = DEFAULT_PEAR_RATIO, width?: number): number {
+  return skuOf(length, width, ratio).widthMm;
 }
 
 export function pearDepth(width: number): number {
   return round2(Math.max(0.1, width) * PEAR_DEPTH_FACTOR);
 }
 
-export function pearDimensions(length: number, ratio = DEFAULT_PEAR_RATIO) {
-  const lengthMm = round1(length);
-  const widthMm = pearWidth(lengthMm, ratio);
-  const depthMm = pearDepth(widthMm);
-  return { lengthMm, widthMm, depthMm };
+export function pearDimensions(length: number, ratio = DEFAULT_PEAR_RATIO, width?: number) {
+  const sku = skuOf(length, width, ratio);
+  return {
+    lengthMm: sku.lengthMm,
+    widthMm: sku.widthMm,
+    depthMm: pearDepth(sku.widthMm),
+  };
 }
 
-/** Pear weight estimate: length × width × 61% depth × 0.0060. */
-export function caratOf(length: number, ratio = DEFAULT_PEAR_RATIO): number {
-  const { lengthMm, widthMm, depthMm } = pearDimensions(length, ratio);
+/** Tip points radially outward. PearMark draws tip-up at rotation 0. */
+export function pearTipOutRotation(angleRadians: number): number {
+  return (angleRadians * 180) / Math.PI + 90;
+}
+
+/** @deprecated Name kept for call sites; orientation is tip-out. */
+export function pearShoulderRotation(
+  _x: number,
+  _y: number,
+  angleRadians: number,
+  _cx: number,
+  _cy: number,
+): number {
+  return pearTipOutRotation(angleRadians);
+}
+
+/** Catalog carat when the size matches a trade SKU; otherwise L×W×61%×0.006. */
+export function caratOf(length: number, ratio = DEFAULT_PEAR_RATIO, width?: number): number {
+  const sku = skuOf(length, width, ratio);
+  if (Math.abs(sku.lengthMm - round1(length)) < 0.05) return sku.carat;
+  const { lengthMm, widthMm, depthMm } = pearDimensions(length, ratio, width);
   return round4(lengthMm * widthMm * depthMm * 0.006);
 }
 
@@ -273,36 +328,82 @@ export function perCtFor(sizeMm: number, brackets: PriceBracket[]): number {
 export function defaultPrices(metal: Metal): PriceBracket[] {
   if (metal === "gold") {
     return [
-      { minMm: 1.5, maxMm: 2.0, perCt: 450 },
-      { minMm: 2.0, maxMm: 2.5, perCt: 550 },
-      { minMm: 2.5, maxMm: 3.0, perCt: 750 },
-      { minMm: 3.0, maxMm: 4.0, perCt: 1100 },
-      { minMm: 4.0, maxMm: 5.0, perCt: 1800 },
-      { minMm: 5.0, maxMm: 6.5, perCt: 3200 },
-      { minMm: 6.5, maxMm: 11.1, perCt: 5500 },
+      { minMm: 5.0, maxMm: 6.0, perCt: 1800 },
+      { minMm: 6.0, maxMm: 7.0, perCt: 2200 },
+      { minMm: 7.0, maxMm: 8.0, perCt: 2800 },
+      { minMm: 8.0, maxMm: 10.0, perCt: 3600 },
+      { minMm: 10.0, maxMm: 12.0, perCt: 4800 },
+      { minMm: 12.0, maxMm: 16.0, perCt: 6500 },
     ];
   }
   return [
-    { minMm: 3.5, maxMm: 5.0, perCt: 8 },
     { minMm: 5.0, maxMm: 8.0, perCt: 12 },
-    { minMm: 8.0, maxMm: 12.1, perCt: 18 },
+    { minMm: 8.0, maxMm: 12.0, perCt: 18 },
+    { minMm: 12.0, maxMm: 16.0, perCt: 24 },
   ];
 }
 
-export function lockMm(stoneMm: number, gap: number): number {
-  return round2(LOCK_STONES * (stoneMm + gap));
+export function lockMm(
+  stoneMm: number,
+  gap: number,
+  ratio = DEFAULT_PEAR_RATIO,
+): number {
+  return round2(LOCK_STONES * (pearWidth(stoneMm, ratio) + gap));
 }
 
-export function converterMm(stoneMm: number, gap: number): number {
-  return round2(CONVERTER_STONES * (stoneMm + gap));
+export function converterMm(
+  stoneMm: number,
+  gap: number,
+  ratio = DEFAULT_PEAR_RATIO,
+): number {
+  return round2(CONVERTER_STONES * (pearWidth(stoneMm, ratio) + gap));
 }
 
-/** Closed-loop span: every station carries one gap, including wrap. */
-export function spanOf(sizes: number[], gap: number): number {
+/** Closed-loop span: radial pears occupy their width plus one wrap gap. */
+export function spanOf(
+  sizes: number[],
+  gap: number,
+  ratio = DEFAULT_PEAR_RATIO,
+): number {
   if (sizes.length === 0) return 0;
   return round2(
-    sizes.reduce((a, d) => a + d, 0) + sizes.length * gap,
+    sizes.reduce((a, length) => a + pearWidth(length, ratio), 0) +
+      sizes.length * gap,
   );
+}
+
+function skuFromLength(length: number, ratio: number, width?: number): PearSku {
+  return skuOf(length, width, ratio);
+}
+
+function spanOfSkus(skus: PearSku[], gap: number): number {
+  if (skus.length === 0) return 0;
+  return round2(skus.reduce((sum, sku) => sum + sku.widthMm, 0) + skus.length * gap);
+}
+
+function bomFromSkus(skus: PearSku[], prices: PriceBracket[]): BomLine[] {
+  const counts = new Map<string, { sku: PearSku; pcs: number }>();
+  for (const sku of skus) {
+    const cur = counts.get(sku.id);
+    if (cur) cur.pcs += 1;
+    else counts.set(sku.id, { sku, pcs: 1 });
+  }
+  return [...counts.values()]
+    .sort((a, b) => a.sku.lengthMm - b.sku.lengthMm || a.sku.widthMm - b.sku.widthMm)
+    .map(({ sku, pcs }) => {
+      const carat = round4(sku.carat * pcs);
+      const perCt = perCtFor(sku.lengthMm, prices);
+      return {
+        sizeMm: sku.lengthMm,
+        lengthMm: sku.lengthMm,
+        widthMm: sku.widthMm,
+        depthMm: pearDepth(sku.widthMm),
+        pcs,
+        carat,
+        perCt,
+        cost: round2(carat * perCt),
+      };
+    });
 }
 
 function bomFrom(
@@ -310,26 +411,7 @@ function bomFrom(
   prices: PriceBracket[],
   ratio: number,
 ): BomLine[] {
-  const counts = new Map<number, number>();
-  for (const d of stones) {
-    const key = round1(d);
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-  const sizes = [...counts.keys()].sort((a, b) => a - b);
-  return sizes.map((sizeMm) => {
-    const pcs = counts.get(sizeMm) ?? 0;
-    const dims = pearDimensions(sizeMm, ratio);
-    const carat = round4(caratOf(sizeMm, ratio) * pcs);
-    const perCt = perCtFor(sizeMm, prices);
-    return {
-      sizeMm,
-      ...dims,
-      pcs,
-      carat,
-      perCt,
-      cost: round2(carat * perCt),
-    };
-  });
+  return bomFromSkus(stones.map((length) => skuFromLength(length, ratio)), prices);
 }
 
 function fitLabel(leftoverMm: number): SegmentFit["fit"] {
@@ -347,7 +429,7 @@ function makeSegment(
   ratio: number,
 ): SegmentFit {
   const target = lengthMm(lengthIn);
-  const setMm = spanOf(sizes, gap);
+  const setMm = spanOf(sizes, gap, ratio);
   const leftoverMm = round2(target - setMm);
   const bom = bomFrom(sizes, prices, ratio);
   return {
@@ -368,8 +450,9 @@ export function countClosed(
   sizeMm: number,
   gapMm: number,
   hardware: number,
+  ratio = DEFAULT_PEAR_RATIO,
 ): number {
-  const pitch = sizeMm + gapMm;
+  const pitch = pearWidth(sizeMm, ratio) + gapMm;
   if (pitch <= 0) return 0;
   return Math.max(0, Math.floor(segmentMm / pitch + 1e-9) - hardware);
 }
@@ -379,121 +462,114 @@ export function countClosed(
  * (front of the necklace), smallest toward both converters.
  */
 function packRun(
-  minSize: number,
-  maxSize: number,
+  minSku: PearSku,
+  maxSku: PearSku,
   gapMm: number,
   spanMm: number,
-  metal: Metal,
-): number[] {
+): PearSku[] {
   if (spanMm <= 0.05) return [];
-  const pitchMin = minSize + gapMm;
-  if (Math.abs(maxSize - minSize) < 0.05) {
+  const skus = catalogBetween(minSku, maxSku);
+  if (skus.length === 0) return [];
+  const small = skus[0];
+  const large = skus[skus.length - 1];
+  const pitchMin = small.widthMm + gapMm;
+  if (skus.length === 1) {
     const n = Math.max(0, Math.floor((spanMm + 1e-9) / pitchMin));
-    return Array.from({ length: n }, () => minSize);
+    return Array.from({ length: n }, () => small);
   }
 
-  const min = Math.min(minSize, maxSize);
-  const max = Math.max(minSize, maxSize);
-  const step = METAL[metal].step;
-  const snap = (v: number) => {
-    const n = Math.round(v / step);
-    return clamp(round1(n * step), min, max);
-  };
-
-  const center = snap(max);
-  const centerSpan = center + gapMm;
+  const centerSpan = large.widthMm + gapMm;
   if (centerSpan > spanMm) {
     const n = Math.max(0, Math.floor((spanMm + 1e-9) / pitchMin));
-    return Array.from({ length: n }, () => min);
+    return Array.from({ length: n }, () => small);
   }
 
   const half = spanMm / 2;
-  const outward: number[] = [];
+  const outward: PearSku[] = [];
   let used = centerSpan / 2;
 
   for (let i = 0; i < 400; i++) {
     const t = clamp(used / Math.max(half, 0.0001), 0, 1);
-    const d = snap(max + (min - max) * t);
-    const need = d + gapMm;
+    const idx = Math.round((skus.length - 1) * (1 - t));
+    const sku = skus[idx] ?? small;
+    const need = sku.widthMm + gapMm;
     if (used + need > half + 1e-9) break;
-    outward.push(d);
+    outward.push(sku);
     used += need;
   }
 
-  let stones = [...outward].reverse().concat(center, outward);
-  let leftover = spanMm - spanOf(stones, gapMm);
-  const add = min + gapMm;
+  let stones = [...outward].reverse().concat(large, outward);
+  let leftover = spanMm - spanOfSkus(stones, gapMm);
+  const add = pitchMin;
   while (leftover + 1e-9 >= add * 2 && stones.length < 400) {
-    stones = [min, ...stones, min];
+    stones = [small, ...stones, small];
     leftover -= add * 2;
   }
-  // Preserve a true mirrored graduation. A single extra pear would bias one
-  // converter end, so any remainder below a pair stays as reported slack.
   return stones;
 }
 
 /** Wrap BOM counts: largest at front, split toward both converters. */
 export function layoutFromList(list: ListLine[]): number[] {
+  return layoutSkusFromList(list).map((sku) => sku.lengthMm);
+}
+
+function layoutSkusFromList(list: ListLine[]): PearSku[] {
   const lines = list
     .filter((l) => l.pcs > 0 && l.sizeMm > 0)
-    .sort((a, b) => b.sizeMm - a.sizeMm);
-  let seq: number[] = [];
+    .map((l) => ({ sku: resolvePearSku(l.sizeMm, l.widthMm), pcs: l.pcs }))
+    .sort((a, b) => b.sku.lengthMm - a.sku.lengthMm || b.sku.widthMm - a.sku.widthMm);
+  let seq: PearSku[] = [];
   for (const line of lines) {
     const left = Math.ceil(line.pcs / 2);
     const right = Math.floor(line.pcs / 2);
     seq = [
-      ...Array.from({ length: left }, () => line.sizeMm),
+      ...Array.from({ length: left }, () => line.sku),
       ...seq,
-      ...Array.from({ length: right }, () => line.sizeMm),
+      ...Array.from({ length: right }, () => line.sku),
     ];
   }
   return seq;
 }
 
-function makeStation(
-  kind: StationKind,
-  sizeMm: number,
-  ratio: number,
-): Station {
-  return { sizeMm, ...pearDimensions(sizeMm, ratio), kind };
+function makeStation(kind: StationKind, sku: PearSku): Station {
+  return {
+    sizeMm: sku.lengthMm,
+    lengthMm: sku.lengthMm,
+    widthMm: sku.widthMm,
+    depthMm: pearDepth(sku.widthMm),
+    kind,
+  };
 }
 
-function repeat(
-  kind: StationKind,
-  sizeMm: number,
-  n: number,
-  ratio: number,
-): Station[] {
-  return Array.from({ length: n }, () => makeStation(kind, sizeMm, ratio));
+function repeat(kind: StationKind, sku: PearSku, n: number): Station[] {
+  return Array.from({ length: n }, () => makeStation(kind, sku));
 }
 
 function buildStations(
-  d: number,
-  braceletRun: number[],
-  necklaceRun: number[],
-  ratio: number,
+  d: PearSku,
+  braceletRun: PearSku[],
+  necklaceRun: PearSku[],
 ): Station[] {
   return [
-    ...repeat("lock1-f", d, LOCK_FEMALE, ratio),
-    ...braceletRun.map((sizeMm) => makeStation("bracelet", sizeMm, ratio)),
-    ...repeat("lock1-m", d, LOCK_MALE, ratio),
-    ...repeat("lock2-f", d, LOCK_FEMALE, ratio),
-    ...repeat("conv-l", d, CONVERTER_STONES, ratio),
-    ...necklaceRun.map((sizeMm) => makeStation("necklace", sizeMm, ratio)),
-    ...repeat("conv-r", d, CONVERTER_STONES, ratio),
-    ...repeat("lock2-m", d, LOCK_MALE, ratio),
+    ...repeat("lock1-f", d, LOCK_FEMALE),
+    ...braceletRun.map((sku) => makeStation("bracelet", sku)),
+    ...repeat("lock1-m", d, LOCK_MALE),
+    ...repeat("lock2-f", d, LOCK_FEMALE),
+    ...repeat("conv-l", d, CONVERTER_STONES),
+    ...necklaceRun.map((sku) => makeStation("necklace", sku)),
+    ...repeat("conv-r", d, CONVERTER_STONES),
+    ...repeat("lock2-m", d, LOCK_MALE),
   ];
 }
 
 function assemblySteps(
-  d: number,
+  d: PearSku,
   braceletIn: number,
   necklaceIn: number,
   braceletRun: number,
   necklaceRun: number,
-  ratio: number,
 ): AssemblyStep[] {
-  const s = formatPearSize(d, ratio);
+  const s = formatPearSku(d);
   return [
     {
       n: 1,
@@ -543,17 +619,16 @@ function assemblySteps(
   ];
 }
 
-function findingsOf(d: number, ratio: number): FindingLine[] {
-  const dims = pearDimensions(d, ratio);
-  const s = formatPearSize(d, ratio);
+function findingsOf(d: PearSku): FindingLine[] {
+  const s = formatPearSku(d);
   return [
     {
       id: "lock",
       name: "Concealed spring lock",
       detail: `${s} mm · 3-stone cover (box 2 / tongue 1) · same SKU both sides`,
-      sizeMm: d,
-      lengthMm: dims.lengthMm,
-      widthMm: dims.widthMm,
+      sizeMm: d.lengthMm,
+      lengthMm: d.lengthMm,
+      widthMm: d.widthMm,
       pcs: 2,
       stonesOnTop: LOCK_STONES,
     },
@@ -561,9 +636,9 @@ function findingsOf(d: number, ratio: number): FindingLine[] {
       id: "converter",
       name: "Converter",
       detail: `${s} mm · dual hinge · necklace joint + bracelet joint`,
-      sizeMm: d,
-      lengthMm: dims.lengthMm,
-      widthMm: dims.widthMm,
+      sizeMm: d.lengthMm,
+      lengthMm: d.lengthMm,
+      widthMm: d.widthMm,
       pcs: 2,
       stonesOnTop: CONVERTER_STONES,
     },
@@ -572,29 +647,30 @@ function findingsOf(d: number, ratio: number): FindingLine[] {
 
 function layoutOnce(
   input: PatternInput,
-  d: number,
+  d: PearSku,
   gap: number,
-  necklaceRun: number[],
+  necklaceRun: PearSku[],
 ): PatternResult {
-  const ratio = normalizeRatio(input.ratio);
+  const ratio = pearRatioOf(d);
   const braceletIn = input.braceletIn;
   const necklaceIn = round2(input.lengthIn - braceletIn);
   const bMm = lengthMm(braceletIn);
-  const nB = countClosed(bMm, d, gap, LOCK_STONES);
+  const nB = countClosed(bMm, d.lengthMm, gap, LOCK_STONES, ratio);
   const braceletRun = Array.from({ length: nB }, () => d);
 
-  const stations = buildStations(d, braceletRun, necklaceRun, ratio);
+  const stations = buildStations(d, braceletRun, necklaceRun);
   const stones = stations.map((s) => s.sizeMm);
-  const totalMm = spanOf(stones, gap);
+  const skus = stations.map((s) => resolvePearSku(s.lengthMm, s.widthMm));
+  const totalMm = spanOfSkus(skus, gap);
   const length = lengthMm(input.lengthIn);
   const leftoverMm = round2(length - totalMm);
 
-  const braceletSizes = [
+  const braceletSkus = [
     ...Array.from({ length: LOCK_FEMALE }, () => d),
     ...braceletRun,
     ...Array.from({ length: LOCK_MALE }, () => d),
   ];
-  const necklaceSizes = [
+  const necklaceSkus = [
     ...Array.from({ length: LOCK_FEMALE }, () => d),
     ...Array.from({ length: CONVERTER_STONES }, () => d),
     ...necklaceRun,
@@ -605,23 +681,35 @@ function layoutOnce(
   const bracelet = makeSegment(
     "Bracelet",
     braceletIn,
-    braceletSizes,
+    braceletSkus.map((sku) => sku.lengthMm),
     gap,
     input.prices,
     ratio,
   );
+  bracelet.setMm = spanOfSkus(braceletSkus, gap);
+  bracelet.leftoverMm = round2(bracelet.lengthMm - bracelet.setMm);
+  bracelet.fit = fitLabel(bracelet.leftoverMm);
+  bracelet.bom = bomFromSkus(braceletSkus, input.prices);
+  bracelet.carat = round4(bracelet.bom.reduce((a, l) => a + l.carat, 0));
+
   const necklace = makeSegment(
     "Necklace front",
     necklaceIn,
-    necklaceSizes,
+    necklaceSkus.map((sku) => sku.lengthMm),
     gap,
     input.prices,
     ratio,
   );
-  const bom = bomFrom(stones, input.prices, ratio);
+  necklace.setMm = spanOfSkus(necklaceSkus, gap);
+  necklace.leftoverMm = round2(necklace.lengthMm - necklace.setMm);
+  necklace.fit = fitLabel(necklace.leftoverMm);
+  necklace.bom = bomFromSkus(necklaceSkus, input.prices);
+  necklace.carat = round4(necklace.bom.reduce((a, l) => a + l.carat, 0));
+
+  const bom = bomFromSkus(skus, input.prices);
   const totalCarat = round4(bom.reduce((a, l) => a + l.carat, 0));
   const totalCost = round2(bom.reduce((a, l) => a + l.cost, 0));
-  const lock = lockMm(d, gap);
+  const lock = round2(LOCK_STONES * (d.widthMm + gap));
 
   return {
     stones,
@@ -636,16 +724,16 @@ function layoutOnce(
     necklaceIn,
     claspMm: round2(lock * 2),
     lockMm: lock,
-    converterMm: converterMm(d, gap),
+    converterMm: round2(CONVERTER_STONES * (d.widthMm + gap)),
     gapMm: round2(gap),
     ratio,
     depthFactor: PEAR_DEPTH_FACTOR,
     orientation: PEAR_ORIENTATION,
-    minSize: d,
+    minSize: d.lengthMm,
     maxSize:
       necklaceRun.length > 0
-        ? necklaceRun.reduce((a, b) => Math.max(a, b), d)
-        : d,
+        ? necklaceRun.reduce((a, sku) => Math.max(a, sku.lengthMm), d.lengthMm)
+        : d.lengthMm,
     setMm: totalMm,
     totalMm,
     leftoverMm,
@@ -655,14 +743,13 @@ function layoutOnce(
     mode: input.mode,
     bracelet,
     necklace,
-    findings: findingsOf(d, ratio),
+    findings: findingsOf(d),
     assembly: assemblySteps(
       d,
       braceletIn,
       necklaceIn,
       braceletRun.length,
       necklaceRun.length,
-      ratio,
     ),
   };
 }
@@ -670,30 +757,42 @@ function layoutOnce(
 export function buildPattern(input: PatternInput): PatternResult {
   const braceletIn = input.braceletIn ?? 7;
   const gap0 = clamp(input.gapMm, 0.05, 1.5);
-  const listSnapped = input.list.map((l) => ({
-    sizeMm: snapSize(l.sizeMm, input.metal),
-    pcs: Math.max(0, Math.round(l.pcs)),
-  }));
+  const listSnapped = input.list.map((l) => {
+    const sku = resolvePearSku(l.sizeMm, l.widthMm);
+    return {
+      sizeMm: sku.lengthMm,
+      widthMm: sku.widthMm,
+      pcs: Math.max(0, Math.round(l.pcs)),
+    };
+  });
   const fromList =
     input.mode === "list" && listSnapped.some((l) => l.pcs > 0);
-  const d = snapSize(
-    fromList
-      ? Math.min(...listSnapped.filter((l) => l.pcs > 0).map((l) => l.sizeMm))
-      : Math.min(input.minSize, input.maxSize),
-    input.metal,
-  );
-  const max = snapSize(
-    fromList
-      ? Math.max(...listSnapped.filter((l) => l.pcs > 0).map((l) => l.sizeMm))
-      : Math.max(input.minSize, input.maxSize),
-    input.metal,
-  );
+  const listedSkus = listSnapped
+    .filter((l) => l.pcs > 0)
+    .map((l) => resolvePearSku(l.sizeMm, l.widthMm));
+  const minSku = fromList
+    ? [...listedSkus].sort((a, b) => a.lengthMm - b.lengthMm || a.widthMm - b.widthMm)[0]
+    : resolvePearSku(
+        Math.min(input.minSize, input.maxSize),
+        input.minWidth ?? input.maxWidth,
+      );
+  const maxSku = fromList
+    ? [...listedSkus].sort((a, b) => b.lengthMm - a.lengthMm || b.widthMm - a.widthMm)[0]
+    : resolvePearSku(
+        Math.max(input.minSize, input.maxSize),
+        input.maxWidth ?? input.minWidth,
+      );
+  const d = minSku ?? DEFAULT_PEAR_SKU;
+  const max = maxSku ?? d;
   const filled: PatternInput = {
     ...input,
     braceletIn,
-    minSize: d,
-    maxSize: max,
-    ratio: normalizeRatio(input.ratio),
+    minSize: d.lengthMm,
+    maxSize: max.lengthMm,
+    minWidth: d.widthMm,
+    maxWidth: max.widthMm,
+    ratio: pearRatioOf(d),
+    list: listSnapped,
   };
 
   const necklaceIn = round2(input.lengthIn - braceletIn);
@@ -701,17 +800,18 @@ export function buildPattern(input: PatternInput): PatternResult {
   const hardware = LOCK_STONES + CONVERTER_STONES * 2;
 
   let gap = gap0;
-  let necklaceRun: number[] = [];
+  let necklaceRun: PearSku[] = [];
 
   if (input.mode === "list" && fromList) {
-    necklaceRun = layoutFromList(listSnapped);
+    necklaceRun = layoutSkusFromList(listSnapped);
     if (input.autoGapFromList) {
       for (let i = 0; i < 6; i++) {
         const trial = layoutOnce(filled, d, gap, necklaceRun);
-        const sizes = trial.stones;
-        if (sizes.length === 0) break;
-        const next = (lengthMm(input.lengthIn) - sizes.reduce((a, x) => a + x, 0)) /
-          sizes.length;
+        const widths = trial.stations.map((station) => station.widthMm);
+        if (widths.length === 0) break;
+        const next =
+          (lengthMm(input.lengthIn) - widths.reduce((a, w) => a + w, 0)) /
+          widths.length;
         if (!Number.isFinite(next)) break;
         gap = round2(clamp(next, 0.05, 1.5));
       }
@@ -719,8 +819,8 @@ export function buildPattern(input: PatternInput): PatternResult {
     return layoutOnce(filled, d, gap, necklaceRun);
   }
 
-  const span = nMm - hardware * (d + gap);
-  necklaceRun = packRun(d, max, gap, span, input.metal);
+  const span = nMm - hardware * (d.widthMm + gap);
+  necklaceRun = packRun(d, max, gap, span);
   return layoutOnce(filled, d, gap, necklaceRun);
 }
 
@@ -743,10 +843,10 @@ export function styleVariants(
     ratio,
   };
 
-  const lineSize = metal === "gold" ? 1.8 : 3.5;
-  const classicSize = metal === "gold" ? 2.5 : 5.0;
-  const rivMin = metal === "gold" ? 1.7 : 3.5;
-  const rivMax = metal === "gold" ? 3.2 : 8.0;
+  const lineSize = DEFAULT_PEAR_SKU.lengthMm;
+  const classicSize = resolvePearSku(6, 4).lengthMm;
+  const rivMin = DEFAULT_PEAR_SKU.lengthMm;
+  const rivMax = resolvePearSku(8, 6).lengthMm;
 
   const mk = (
     id: string,
@@ -787,10 +887,8 @@ export function searchByTarget(
   ratio: number = DEFAULT_PEAR_RATIO,
 ): Variant[] {
   if (!(target > 0)) return [];
-  const grid = sizeGrid(metal);
-  const step = METAL[metal].step;
-  const sample =
-    metal === "gold" ? grid.filter((_, i) => i % 2 === 0) : grid;
+  const grid = PEAR_CATALOG.map((sku) => sku.lengthMm);
+  const sample = PEAR_CATALOG.filter((_, i) => i % 2 === 0).map((sku) => sku.lengthMm);
 
   type Cand = {
     minSize: number;
@@ -821,7 +919,7 @@ export function searchByTarget(
     for (let j = i + 2; j < sample.length; j++) {
       const minSize = sample[i];
       const maxSize = sample[j];
-      if (maxSize - minSize < step * 3) continue;
+      if (maxSize - minSize < 1) continue;
       const result = buildPattern({ ...base, minSize, maxSize });
       if (result.totalPcs < 8) continue;
       const metric = kind === "carat" ? result.totalCarat : result.totalCost;
@@ -864,19 +962,19 @@ export function formatBomText(result: PatternResult): string {
   const lines = [
     `${result.lengthIn}″ ${metal} pear rivière · ${kind}`,
     `Back bracelet ${result.braceletIn}″ · front ${result.necklaceIn}″`,
-    `Pear ratio ${result.ratio.toFixed(2)} · depth ${Math.round(result.depthFactor * 100)}% of width`,
+    `Catalog L×W · depth ${Math.round(result.depthFactor * 100)}% of width · tip out`,
     `Lock ${formatPearSize(result.minSize, result.ratio)} mm concealed spring × 2 · converter × 2`,
     `Orientation: ${result.orientation}`,
     "",
     "BRACELET",
     ...result.bracelet.bom.map(
-      (l) => `  ${formatPearSize(l.lengthMm, result.ratio)} = ${l.pcs}`,
+      (l) => `  ${formatPearSize(l.lengthMm, result.ratio, l.widthMm)} = ${l.pcs}`,
     ),
     `  ${result.bracelet.pcs} pcs · ${formatCarat(result.bracelet.carat)} ct · leftover ${result.bracelet.leftoverMm.toFixed(1)} mm`,
     "",
     "NECKLACE FRONT",
     ...result.necklace.bom.map(
-      (l) => `  ${formatPearSize(l.lengthMm, result.ratio)} = ${l.pcs}`,
+      (l) => `  ${formatPearSize(l.lengthMm, result.ratio, l.widthMm)} = ${l.pcs}`,
     ),
     `  ${result.necklace.pcs} pcs · ${formatCarat(result.necklace.carat)} ct · leftover ${result.necklace.leftoverMm.toFixed(1)} mm`,
     "",
@@ -889,7 +987,7 @@ export function formatBomText(result: PatternResult): string {
     ...result.assembly.map((s) => `${s.n}. ${s.title} — ${s.detail}`),
     "",
     `TOTAL ${result.totalPcs} pcs · ${formatCarat(result.totalCarat)} ct · ${formatMoney(result.totalCost)}`,
-    `Gap ${result.gapMm.toFixed(2)} mm · ${spanOf(result.stones, result.gapMm).toFixed(1)} mm of ${result.lengthMm.toFixed(1)} mm`,
+    `Gap ${result.gapMm.toFixed(2)} mm · ${spanOf(result.stones, result.gapMm, result.ratio).toFixed(1)} mm of ${result.lengthMm.toFixed(1)} mm`,
   ];
   return lines.join("\n");
 }
@@ -903,9 +1001,9 @@ export function formatSize(mm: number): string {
 export function formatPearSize(
   length: number,
   ratio = DEFAULT_PEAR_RATIO,
+  width?: number,
 ): string {
-  const { lengthMm, widthMm } = pearDimensions(length, ratio);
-  return `${formatSize(lengthMm)} × ${formatSize(widthMm)}`;
+  return formatPearSku(skuOf(length, width, ratio));
 }
 
 export function formatCarat(ct: number): string {
@@ -946,6 +1044,8 @@ export type SavedConfig = {
   mode: PatternMode;
   minSize: number;
   maxSize: number;
+  minWidth?: number;
+  maxWidth?: number;
   list: ListLine[];
   prices: PriceBracket[];
   autoGapFromList: boolean;
@@ -955,4 +1055,6 @@ export type SavedConfig = {
   projectId: string;
   projectName: string;
   notes: string;
+  gemColors?: string[];
+  colorScope?: "stone" | "pair" | "all";
 };

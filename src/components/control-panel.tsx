@@ -10,12 +10,12 @@ import {
   GAP_MAX,
   GAP_MIN,
   INCHES,
-  METAL,
-  PEAR_RATIO_MAX,
-  PEAR_RATIO_MIN,
-  formatPearSize,
+  PEAR_CATALOG,
+  formatPearSku,
   formatSize,
-  sizeGrid,
+  pearSkuId,
+  pearSkuOptionLabel,
+  resolvePearSku,
   type BraceletIn,
   type LengthIn,
 } from "@/lib/necklace/engine";
@@ -24,9 +24,9 @@ import { cn } from "@/lib/utils";
 
 export function ControlPanel() {
   const s = useAtelier();
-  const spec = METAL[s.metal];
-  const grid = sizeGrid(s.metal);
-  const single = Math.abs(s.maxSize - s.minSize) < spec.step / 2;
+  const minSku = resolvePearSku(s.minSize, s.minWidth);
+  const maxSku = resolvePearSku(s.maxSize, s.maxWidth);
+  const single = minSku.id === maxSku.id;
 
   return (
     <div className="flex flex-col gap-5">
@@ -55,9 +55,7 @@ export function ControlPanel() {
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          {s.metal === "gold"
-            ? "1.5–11 mm · 0.1 mm steps · diamond"
-            : "3.5–12 mm · 0.5 mm steps"}
+          {s.metal === "gold" ? "Gold setting · catalog pear sizes" : "Silver setting · catalog pear sizes"}
         </p>
       </Field>
 
@@ -140,20 +138,9 @@ export function ControlPanel() {
         </p>
       </Field>
 
-      <Field label="Pear proportion">
-        <SizeSlider
-          label="Length ÷ width ratio"
-          value={s.ratio}
-          metalStep={0.01}
-          min={PEAR_RATIO_MIN}
-          max={PEAR_RATIO_MAX}
-          suffix=""
-          onChange={s.setRatio}
-        />
-        <p className="text-xs text-muted-foreground">
-          Width is derived from length. Current smallest: {formatPearSize(s.minSize, s.ratio)} mm · depth 61% of width.
-        </p>
-      </Field>
+      <p className="text-xs text-muted-foreground">
+        Catalog length × width only. Pitch uses width. Tips point outward.
+      </p>
 
       <Field label="Pattern">
         <div className="grid grid-cols-2 gap-2">
@@ -197,28 +184,48 @@ export function ControlPanel() {
               Single size
             </button>
           </div>
-          <SizeSlider
-            label={single ? "Pear length" : "Smallest length (bracelet / lock)"}
-            value={s.minSize}
-            metalStep={spec.step}
-            min={spec.min}
-            max={spec.max}
-            onChange={(v) => (single ? s.setSingle(v) : s.setMin(v))}
-          />
+          <label className="block space-y-1 text-xs text-muted-foreground">
+            {single ? "Pear size" : "Smallest (bracelet / lock)"}
+            <select
+              value={minSku.id}
+              onChange={(e) => {
+                const sku = PEAR_CATALOG.find((item) => item.id === e.target.value);
+                if (!sku) return;
+                if (single) s.setSingle(sku.lengthMm, sku.widthMm);
+                else s.setMin(sku.lengthMm, sku.widthMm);
+              }}
+              className="h-11 w-full rounded-md border border-input bg-muted px-2 text-sm tabular-nums text-foreground"
+            >
+              {PEAR_CATALOG.map((sku) => (
+                <option key={sku.id} value={sku.id}>
+                  {pearSkuOptionLabel(sku)}
+                </option>
+              ))}
+            </select>
+          </label>
           {!single && (
-            <SizeSlider
-              label="Largest (front)"
-              value={s.maxSize}
-              metalStep={spec.step}
-              min={spec.min}
-              max={spec.max}
-              onChange={s.setMax}
-            />
+            <label className="block space-y-1 text-xs text-muted-foreground">
+              Largest (front)
+              <select
+                value={maxSku.id}
+                onChange={(e) => {
+                  const sku = PEAR_CATALOG.find((item) => item.id === e.target.value);
+                  if (sku) s.setMax(sku.lengthMm, sku.widthMm);
+                }}
+                className="h-11 w-full rounded-md border border-input bg-muted px-2 text-sm tabular-nums text-foreground"
+              >
+                {PEAR_CATALOG.map((sku) => (
+                  <option key={sku.id} value={sku.id}>
+                    {pearSkuOptionLabel(sku)}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
           {!single && (
             <p className="text-xs text-muted-foreground">
-              Graduates {formatPearSize(s.minSize, s.ratio)} → {formatPearSize(s.maxSize, s.ratio)} mm
-              on the front. Bracelet and locks stay {formatPearSize(s.minSize, s.ratio)} mm.
+              Graduates {formatPearSku(minSku)} → {formatPearSku(maxSku)} mm
+              on the front. Bracelet and locks stay {formatPearSku(minSku)} mm.
             </p>
           )}
         </div>
@@ -234,15 +241,17 @@ export function ControlPanel() {
             {s.list.map((row, i) => (
               <div key={`${row.sizeMm}-${i}`} className="flex items-center gap-2">
                 <select
-                  value={row.sizeMm}
-                  onChange={(e) =>
-                    s.updateListRow(i, { sizeMm: Number(e.target.value) })
-                  }
+                  value={pearSkuId(row.sizeMm, row.widthMm ?? resolvePearSku(row.sizeMm).widthMm)}
+                  onChange={(e) => {
+                    const sku = PEAR_CATALOG.find((item) => item.id === e.target.value);
+                    if (!sku) return;
+                    s.updateListRow(i, { sizeMm: sku.lengthMm, widthMm: sku.widthMm });
+                  }}
                   className="h-10 flex-1 rounded-md border border-input bg-muted px-2 text-sm tabular-nums"
                 >
-                  {grid.map((mm) => (
-                    <option key={mm} value={mm}>
-                      {formatPearSize(mm, s.ratio)} mm
+                  {PEAR_CATALOG.map((sku) => (
+                    <option key={sku.id} value={sku.id}>
+                      {pearSkuOptionLabel(sku)}
                     </option>
                   ))}
                 </select>

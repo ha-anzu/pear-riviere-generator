@@ -8,15 +8,22 @@ import {
   type PatternResult,
 } from "@/lib/necklace/engine";
 import { cn } from "@/lib/utils";
+import {
+  GEM_COLORS,
+  gemColorAt,
+  type GemColorKey,
+} from "@/lib/necklace/gem-colors";
 
 export function GemPreview({
   result,
   selectedIndex,
   metalColor,
+  gemColors,
 }: {
   result: PatternResult;
   selectedIndex: number | null;
   metalColor: MetalColor;
+  gemColors: GemColorKey[];
 }) {
   const stations = result.stations;
   const n = stations.length;
@@ -29,6 +36,7 @@ export function GemPreview({
   const size = station?.sizeMm ?? result.maxSize;
   const ct = caratOf(size, result.ratio);
   const zone = station ? stationLabel(station.kind) : "—";
+  const gemColor = index == null ? "colorless" : gemColorAt(gemColors, index);
 
   return (
     <div className="flex flex-col rounded-2xl border border-border bg-card p-4 lg:h-full">
@@ -43,6 +51,7 @@ export function GemPreview({
               r={42}
               metal={result.metal}
               metalColor={metalColor}
+              gemColor={gemColor}
               aspectRatio={result.ratio}
               showProngs
             />
@@ -70,7 +79,7 @@ export function GemPreview({
             )}
           />
           <span className="text-xs text-muted-foreground">
-            Pear brilliant · point-to-center orientation
+            Pear brilliant · {GEM_COLORS[gemColor].label} · shoulder sweep
           </span>
         </div>
       </div>

@@ -162,6 +162,55 @@ html[data-theme="cyber"] .cyber-glow {
   text-shadow: 0 0 12px rgb(255 0 51 / 0.45);
 }
 
+.suite-menu {
+  order: 3;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.65rem;
+  scrollbar-width: none;
+}
+.suite-menu::-webkit-scrollbar { display: none; }
+.suite-home,
+.suite-tool {
+  display: inline-flex;
+  min-height: 2.25rem;
+  flex: none;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0 0.65rem;
+  color: var(--color-muted-foreground);
+  font-size: 0.7rem;
+  text-decoration: none;
+  transition: 180ms ease;
+}
+.suite-home { color: var(--color-gold); }
+.suite-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.suite-tool:hover,
+.suite-home:hover { border-color: var(--color-primary); color: var(--color-foreground); }
+.suite-tool.is-active { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-primary-foreground); }
+
+.gem-swatch > span:first-child {
+  border: 1px solid color-mix(in srgb, var(--gem-fill) 72%, white);
+  background: radial-gradient(circle at 35% 28%, var(--gem-light), var(--gem-fill) 58%, var(--color-background) 145%);
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.12);
+}
+
+@media (min-width: 1100px) {
+  .suite-menu {
+    order: initial;
+    width: auto;
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

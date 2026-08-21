@@ -6,6 +6,11 @@ import {
   type Metal,
   type MetalColor,
 } from "@/lib/necklace/engine";
+import {
+  DEFAULT_GEM_COLOR,
+  GEM_COLORS,
+  type GemColorKey,
+} from "@/lib/necklace/gem-colors";
 
 const PEAR_PATH =
   "M 0 -1 C .10 -.77 .46 -.43 .58 .02 C .76 .70 .37 1 0 1 C -.37 1 -.76 .70 -.58 .02 C -.46 -.43 -.10 -.77 0 -1 Z";
@@ -15,6 +20,7 @@ export function PearMark({
   r,
   metal,
   metalColor,
+  gemColor = DEFAULT_GEM_COLOR,
   aspectRatio = DEFAULT_PEAR_RATIO,
   selected = false,
   showProngs = true,
@@ -22,6 +28,7 @@ export function PearMark({
   r: number;
   metal: Metal;
   metalColor?: MetalColor;
+  gemColor?: GemColorKey;
   aspectRatio?: number;
   selected?: boolean;
   showProngs?: boolean;
@@ -29,18 +36,19 @@ export function PearMark({
   const uid = useId().replace(/:/g, "");
   const paint = METAL_COLOR[metalColor ?? defaultMetalColor(metal)];
   const fillId = `${uid}-pear`;
-  const scaleX = r / Math.max(1.1, aspectRatio);
-  const scaleY = r;
+  const scaleX = r;
+  const scaleY = r * Math.max(1.1, aspectRatio);
   const simple = r < 2.5;
+  const gem = GEM_COLORS[gemColor];
 
   return (
     <g>
       <defs>
         <radialGradient id={fillId} cx="36%" cy="34%" r="72%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="38%" stopColor="#eaf3fa" />
-          <stop offset="72%" stopColor="#becbd8" />
-          <stop offset="100%" stopColor="#768899" />
+          <stop offset="0%" stopColor={gem.light} />
+          <stop offset="38%" stopColor={gem.fill} />
+          <stop offset="72%" stopColor={gem.fill} />
+          <stop offset="100%" stopColor={gem.edge} />
         </radialGradient>
       </defs>
       <g transform={`scale(${scaleX.toFixed(3)} ${scaleY.toFixed(3)})`}>
@@ -68,16 +76,16 @@ export function PearMark({
           <>
             <path
               d="M 0 -.79 L .22 -.18 L .36 .48 L 0 .73 L -.36 .48 L -.22 -.18 Z"
-              fill="#ffffff"
+              fill={gem.light}
               opacity={0.44}
-              stroke="#9babb9"
+              stroke={gem.edge}
               strokeWidth={0.025}
               vectorEffect="non-scaling-stroke"
             />
             <path
               d="M 0 -.79 L .48 .08 M 0 -.79 L -.48 .08 M .22 -.18 L .58 .24 M -.22 -.18 L -.58 .24 M .36 .48 L .48 .73 M -.36 .48 L -.48 .73 M 0 .73 L 0 1"
               fill="none"
-              stroke="#8294a6"
+              stroke={gem.edge}
               strokeWidth={0.026}
               vectorEffect="non-scaling-stroke"
               opacity={0.82}
@@ -85,7 +93,7 @@ export function PearMark({
             <path
               d="M -.28 -.08 C -.12 -.35 .08 -.47 .24 -.30"
               fill="none"
-              stroke="#fff"
+              stroke={gem.light}
               strokeWidth={0.11}
               vectorEffect="non-scaling-stroke"
               strokeLinecap="round"

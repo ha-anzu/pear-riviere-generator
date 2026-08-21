@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { AppHeader } from "@/components/app-header";
 import { BomPanel } from "@/components/bom-panel";
 import { ControlPanel } from "@/components/control-panel";
+import { ColorStudio } from "@/components/color-studio";
 import { GemPreview } from "@/components/gem-preview";
 import { ManufacturingSheet } from "@/components/manufacturing-sheet";
 import { NecklaceRing, StrandView } from "@/components/necklace-ring";
@@ -42,6 +43,7 @@ export function Atelier() {
   const projectId = useAtelier((s) => s.projectId);
   const projectName = useAtelier((s) => s.projectName);
   const notes = useAtelier((s) => s.notes);
+  const gemColors = useAtelier((s) => s.gemColors);
   const setProjectId = useAtelier((s) => s.setProjectId);
   const setProjectName = useAtelier((s) => s.setProjectName);
   const setNotes = useAtelier((s) => s.setNotes);
@@ -226,6 +228,7 @@ export function Atelier() {
           </div>
 
           <ControlPanel />
+          <ColorStudio />
 
           <div className="mt-6 space-y-2 border-t border-border pt-4">
             <p className="text-xs tracking-wide text-muted-foreground uppercase">
@@ -320,12 +323,14 @@ export function Atelier() {
                 selectedIndex={selectedIndex}
                 onSelect={setSelected}
                 metalColor={metalColor}
+                gemColors={gemColors}
               />
             </div>
             <GemPreview
               result={result}
               selectedIndex={selectedIndex}
               metalColor={metalColor}
+              gemColors={gemColors}
             />
           </div>
 
@@ -337,7 +342,7 @@ export function Atelier() {
               {result.braceletIn}″ back · {result.necklaceIn}″ front
             </Chip>
             <Chip>lock {formatPearSize(result.minSize, result.ratio)} mm × 2</Chip>
-            <Chip>pear ratio {result.ratio.toFixed(2)}</Chip>
+            <Chip>tip out · catalog L×W</Chip>
             <Chip>gap {result.gapMm.toFixed(2)} mm</Chip>
             <Chip>
               leftover {result.leftoverMm > 0 ? "+" : ""}
@@ -351,6 +356,7 @@ export function Atelier() {
             selectedIndex={selectedIndex}
             onSelect={setSelected}
             metalColor={metalColor}
+            gemColors={gemColors}
           />
 
           <BomPanel />

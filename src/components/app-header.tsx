@@ -5,6 +5,7 @@ import { formatCarat, formatMoney } from "@/lib/necklace/engine";
 import { PRESETS, useAtelier } from "@/lib/necklace/store";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { SuiteMenu } from "@/components/suite-menu";
 
 export function AppHeader() {
   const result = useAtelier((s) => s.result);
@@ -16,7 +17,7 @@ export function AppHeader() {
 
   return (
     <header className="no-print sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
         <Link to="/" className="flex min-w-0 items-baseline gap-2">
           {cyber ? (
             <span className="font-display text-xl leading-none tracking-wide uppercase">
@@ -25,11 +26,11 @@ export function AppHeader() {
             </span>
           ) : (
             <span className="font-display text-2xl leading-none tracking-tight">
-              Pear Rivière
+              Rivière
             </span>
           )}
           <span className="hidden text-xs text-muted-foreground sm:inline">
-            Convertible patterns
+            Pear rivière
           </span>
         </Link>
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
@@ -80,6 +81,7 @@ export function AppHeader() {
             </Link>
           ) : null}
         </div>
+        <SuiteMenu active="pear" />
       </div>
     </header>
   );
