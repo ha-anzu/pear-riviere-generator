@@ -84,7 +84,11 @@ Must look like the same product.
 - Metal setting color: yellow / white / rose.
 - Local-first history / persist, JSON or CSV + HD export, shop sheet / BOM.
 - Gem preview overlay: small SVG mark, bottom-right, pointer-events none, size + carat/name. Not a CSS circle card.
-- Hardware callouts: convertible rings label **LOCK** and **CONVERTER** (L / R) with arrows. Bracelet clasp is **LOCK**. Mixed-cut labels **LOCK** when a clasp reserve is drawn.
+- Hardware callouts point at **stones**, never at sector bands or metal boxes.
+  - Bracelet run is BACK. **LOCK** is the 3-stone lock **right after the bracelet ends**: right `lock1-m` + `lock2-f`, left `lock2-m` + `lock1-f`.
+  - **CONVERTER** is the **one stone after that lock** toward the front (`conv-l`, `conv-r`).
+  - Halo the lock/converter pear or round stone only (gold lock, silver converter). No back/front/lock fills, no converter rectangles.
+  - Round bracelet: halo the first and last stones at the clasp and label them LOCK.
 
 Do not mix black-theme velvet tokens into white, or the reverse.
 
@@ -226,7 +230,7 @@ Fit labels:
 
 Round carat: production round-brilliant chart in necklace `engine.ts` (d³ interpolated). Not old HTML `D³×0.0061` except the bracelet repo still uses that formula for round melee.
 
-Gold round grid 1.5–11 mm step 0.1. Silver 3.5–12 mm step 0.5. Gap shop 0.2–0.5.
+Gold round grid 1.5–11 mm step 0.1. Silver 3.5–12 mm step 0.5. Gap shop 0.2–0.5. **Default gap = 0.2 mm.**
 
 Constants: `LOCK_STONES=3`, `LOCK_FEMALE=2`, `LOCK_MALE=1`, `CONVERTER_STONES=1`.
 
@@ -243,7 +247,7 @@ Key files:
 - `src/lib/necklace/gem-colors.ts`
 - `src/lib/necklace/metal-weight.ts`
 - `src/lib/locale.ts` / `src/lib/theme.ts`
-- `src/components/necklace-ring.tsx` — stations, BACK/FRONT, LOCK/CONVERTER arrows
+- `src/components/necklace-ring.tsx` — stones only; LOCK after bracelet; CONVERTER one after lock
 - `src/components/manufacturing-sheet.tsx`
 - `src/components/metal-quote.tsx`
 - `src/components/gem-preview.tsx`
@@ -255,7 +259,7 @@ Bracelet segment (F1+bracelet+M1) centered at 12 o’clock:
 
 `startAng = −π/2 − mmToAngle(braceletMm)/2`
 
-Default seed: gold, 16″, back bracelet 7″ (front 9″), 2.5 mm single size, gap 0.28 mm, yellow gold.
+Default seed: gold, 16″, back bracelet 7″ (front 9″), 2.5 mm single size, **gap 0.2 mm**, yellow gold.
 
 Examples RN / RR are FRONT lists. Bracelet auto-fills in smallest.
 
@@ -263,9 +267,11 @@ Examples RN / RR are FRONT lists. Bracelet auto-fills in smallest.
 
 ## Round bracelet specifics
 
-Repo: `round-diamond-bracelet-generator` (Vite + React). Lengths 6, 6.25, 6.5, 7, 7.5, 8 inches. Palindromic graduation. Physical spacing. Color studio first-class.
+Repo: `round-diamond-bracelet-generator` (Vite + React). Lengths 6, 6.25, 6.5, 7, 7.5, 8 inches. Palindromic graduation. **Gap 0.2 mm.** Color studio first-class.
 
-Keep it visually in the same family: black/white, EN/TH, suite menu, gemstone color names, `DiamondMark` overlay, LOCK arrow at 12 o’clock, manufacturing sheet with five-alloy quotes.
+Must look like necklace/pear: **Rivière** header, EN|ไทย, Black|White, IBM Plex, velvet square, `DiamondMark` on every stone, LOCK halo on clasp-end stones, shop sheet with five-alloy quotes. No cyber red/yellow, no diamond H mark, no CSS-circle gems.
+
+OpenTools page iframes `https://round-diamond-bracelet-generator.vercel.app/`. Never commit a frozen `assets/` bundle there.
 
 ---
 
@@ -328,7 +334,7 @@ Pitch = **width + gap**. Visual `r` on the ring is width-based. `PearMark` scale
 
 Depth for non-catalog fallback: 61% of width. Catalog carat overrides the L×W×depth×0.006 estimate.
 
-Default seed: gold 16″, bracelet 7″, **5 × 3 mm**, gap 0.28.
+Default seed: gold 16″, bracelet 7″, **5 × 3 mm**, gap 0.2 mm.
 
 Hardware (locks + converters + bracelet) stay on the **smallest catalog SKU**.
 
@@ -361,6 +367,8 @@ Do not convert this into a graduated tennis necklace. Do not drop the 57-stone i
 ## Site embedding
 
 `public/opentools/<tool>/index.html` is a thin chrome + iframe of the Vercel app. Do not paste the whole TanStack app into the static HTML unless shipping a fully static port.
+
+`hanzutechcom.vercel.app` serves this export. If leftover `app.js` / `necklace-engine.js` sit next to the tennis iframe page, Next can still ship the **old** generator. Keep tennis and bracelet folders iframe-only.
 
 Hub `public/opentools/riviere-pattern-suite/index.html` is the style picker.
 
@@ -397,3 +405,5 @@ When adding a tool:
 - Do not write only `opentools/` and skip `public/opentools/`.
 - Do not keep a new jewelry tool under a Grok color-name repo as the public identity. Rename (`mixed-cut-bracelet-generator`, not `cobalt-blue-scarlet-tiger`).
 - Do not mix mixed-cut inventory colors into the 15-key tennis studio, or the reverse.
+- Do not draw lock/converter as sector highlights or metal boxes. Halo the stone.
+- Do not leave converter arrows nudged off the converter stone. Converter is the one stone after the lock.

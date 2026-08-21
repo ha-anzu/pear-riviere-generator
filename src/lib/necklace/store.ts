@@ -149,7 +149,7 @@ const seed = {
   metalColor: defaultMetalColor(initialMetal),
   lengthIn: 16 as LengthIn,
   braceletIn: 7 as BraceletIn,
-  gapMm: 0.28,
+  gapMm: 0.2,
   ratio: pearRatioOf(DEFAULT_PEAR_SKU),
   mode: "range" as PatternMode,
   minSize: 5,

@@ -70,45 +70,6 @@ function layoutStations(
   });
 }
 
-function spanOfKind(positions: Pos[], kinds: StationKind[]): {
-  a0: number;
-  a1: number;
-} | null {
-  const hits = positions.filter((p) => kinds.includes(p.kind));
-  if (hits.length === 0) return null;
-  return { a0: hits[0].startAng, a1: hits[hits.length - 1].endAng };
-}
-
-function wrapSpan(
-  positions: Pos[],
-  endKinds: StationKind[],
-  startKinds: StationKind[],
-): { a0: number; a1: number } | null {
-  const endHits = positions.filter((p) => endKinds.includes(p.kind));
-  const startHits = positions.filter((p) => startKinds.includes(p.kind));
-  if (endHits.length === 0 || startHits.length === 0) return null;
-  const a0 = endHits[0].startAng;
-  let a1 = startHits[startHits.length - 1].endAng;
-  while (a1 < a0) a1 += Math.PI * 2;
-  return { a0, a1 };
-}
-
-function ringBand(
-  cx: number,
-  cy: number,
-  rInner: number,
-  rOuter: number,
-  a0: number,
-  a1: number,
-): string {
-  let end = a1;
-  while (end < a0) end += Math.PI * 2;
-  const large = end - a0 > Math.PI ? 1 : 0;
-  const pt = (r: number, a: number) =>
-    `${(cx + r * Math.cos(a)).toFixed(3)},${(cy + r * Math.sin(a)).toFixed(3)}`;
-  return `M ${pt(rOuter, a0)} A ${rOuter} ${rOuter} 0 ${large} 1 ${pt(rOuter, end)} L ${pt(rInner, end)} A ${rInner} ${rInner} 0 ${large} 0 ${pt(rInner, a0)} Z`;
-}
-
 function polarLabel(
   cx: number,
   cy: number,
@@ -136,11 +97,17 @@ function polarLabel(
   );
 }
 
-function nudgeToward(ang: number, target: number, amount: number): number {
-  let d = target - ang;
-  while (d > Math.PI) d -= Math.PI * 2;
-  while (d < -Math.PI) d += Math.PI * 2;
-  return ang + Math.sign(d) * Math.min(amount, Math.abs(d));
+function meanAng(positions: Pos[]): number {
+  if (positions.length === 0) return 0;
+  const x = positions.reduce((a, p) => a + Math.cos(p.ang), 0);
+  const y = positions.reduce((a, p) => a + Math.sin(p.ang), 0);
+  return Math.atan2(y, x);
+}
+
+function hardwareRole(kind: StationKind): "lock" | "conv" | null {
+  if (kind.startsWith("lock")) return "lock";
+  if (kind.startsWith("conv")) return "conv";
+  return null;
 }
 
 function hardwareCallout(
@@ -228,18 +195,14 @@ export function NecklaceRing({
     [result.stations, result.gapMm, cx, cy],
   );
 
-  const back = spanOfKind(positions, ["lock1-f", "bracelet", "lock1-m"]);
-  const front = spanOfKind(positions, ["conv-l", "necklace", "conv-r"]);
-  const rightLock = spanOfKind(positions, ["lock1-m", "lock2-f"]);
-  const leftLock = wrapSpan(positions, ["lock2-m"], ["lock1-f"]);
-  const converters = positions.filter(
-    (p) => p.kind === "conv-l" || p.kind === "conv-r",
+  const lockRight = positions.filter(
+    (p) => p.kind === "lock1-m" || p.kind === "lock2-f",
   );
-
-  const leftAng = leftLock ? (leftLock.a0 + leftLock.a1) / 2 : Math.PI;
-  const rightAng = rightLock
-    ? (rightLock.a0 + rightLock.a1) / 2
-    : 0;
+  const lockLeft = positions.filter(
+    (p) => p.kind === "lock2-m" || p.kind === "lock1-f",
+  );
+  const convL = positions.find((p) => p.kind === "conv-l");
+  const convR = positions.find((p) => p.kind === "conv-r");
 
   return (
     <svg
@@ -292,70 +255,6 @@ export function NecklaceRing({
         opacity={0.4}
       />
 
-      {back && (
-        <path
-          d={ringBand(cx, cy, R - 22, R + 22, back.a0, back.a1)}
-          fill="var(--color-gold)"
-          opacity={0.1}
-        />
-      )}
-      {front && (
-        <path
-          d={ringBand(cx, cy, R - 22, R + 22, front.a0, front.a1)}
-          fill="var(--color-foreground)"
-          opacity={0.05}
-        />
-      )}
-      {rightLock && (
-        <path
-          d={ringBand(cx, cy, R - 28, R + 28, rightLock.a0, rightLock.a1)}
-          fill={paint.fill}
-          opacity={0.22}
-        />
-      )}
-      {leftLock && (
-        <path
-          d={ringBand(cx, cy, R - 28, R + 28, leftLock.a0, leftLock.a1)}
-          fill={paint.fill}
-          opacity={0.22}
-        />
-      )}
-
-      {converters.map((p) => (
-        <g
-          key={`conv-${p.index}`}
-          transform={`translate(${p.x}, ${p.y}) rotate(${((p.ang * 180) / Math.PI).toFixed(2)})`}
-        >
-          <rect
-            x={(-p.r * 1.15).toFixed(2)}
-            y={(-p.r * 1.55).toFixed(2)}
-            width={(p.r * 2.3).toFixed(2)}
-            height={(p.r * 3.1).toFixed(2)}
-            rx={(p.r * 0.25).toFixed(2)}
-            fill={paint.fill}
-            stroke={paint.dark}
-            strokeWidth={0.7}
-            opacity={0.85}
-          />
-          <line
-            x1={(-p.r * 0.15).toFixed(2)}
-            x2={(-p.r * 0.15).toFixed(2)}
-            y1={(-p.r * 1.35).toFixed(2)}
-            y2={(p.r * 1.35).toFixed(2)}
-            stroke={paint.light}
-            strokeWidth={0.7}
-          />
-          <line
-            x1={(p.r * 0.15).toFixed(2)}
-            x2={(p.r * 0.15).toFixed(2)}
-            y1={(-p.r * 1.35).toFixed(2)}
-            y2={(p.r * 1.35).toFixed(2)}
-            stroke={paint.light}
-            strokeWidth={0.7}
-          />
-        </g>
-      ))}
-
       {positions.map((p) => (
         <g
           key={p.index}
@@ -384,6 +283,7 @@ export function NecklaceRing({
             gemColor={gemColorAt(gemColors, p.index)}
             aspectRatio={p.ratio}
             selected={p.index === selectedIndex}
+            callout={hardwareRole(p.kind)}
           />
           </g>
         </g>
@@ -391,38 +291,50 @@ export function NecklaceRing({
 
       {polarLabel(cx, cy, R + 40, -Math.PI / 2, t("back"), "var(--color-muted-foreground)", 10)}
       {polarLabel(cx, cy, R + 40, Math.PI / 2, t("frontMark"), "var(--color-muted-foreground)", 10)}
-      {hardwareCallout(
-        cx,
-        cy,
-        R,
-        leftAng,
-        t("lockCallout"),
-        t("left"),
-        "var(--color-gold)",
-        "lock-arrow",
-      )}
-      {hardwareCallout(
-        cx,
-        cy,
-        R,
-        rightAng,
-        t("lockCallout"),
-        t("right"),
-        "var(--color-gold)",
-        "lock-arrow",
-      )}
-      {converters.map((p) =>
+      {lockLeft.length > 0 &&
         hardwareCallout(
           cx,
           cy,
           R,
-          nudgeToward(p.ang, Math.PI / 2, 0.32),
+          meanAng(lockLeft),
+          t("lockCallout"),
+          t("left"),
+          "var(--color-gold)",
+          "lock-arrow",
+        )}
+      {lockRight.length > 0 &&
+        hardwareCallout(
+          cx,
+          cy,
+          R,
+          meanAng(lockRight),
+          t("lockCallout"),
+          t("right"),
+          "var(--color-gold)",
+          "lock-arrow",
+        )}
+      {convL &&
+        hardwareCallout(
+          cx,
+          cy,
+          R,
+          convL.ang,
           t("converterCallout"),
-          p.kind === "conv-l" ? t("left") : t("right"),
+          t("left"),
           "var(--color-silver)",
           "conv-arrow",
-        ),
-      )}
+        )}
+      {convR &&
+        hardwareCallout(
+          cx,
+          cy,
+          R,
+          convR.ang,
+          t("converterCallout"),
+          t("right"),
+          "var(--color-silver)",
+          "conv-arrow",
+        )}
 
       <text
         x={cx}

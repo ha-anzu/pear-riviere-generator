@@ -26,6 +26,7 @@ export function PearMark({
   gemColor = DEFAULT_GEM_COLOR,
   aspectRatio = DEFAULT_PEAR_RATIO,
   selected = false,
+  callout = null,
   showProngs = true,
 }: {
   r: number;
@@ -34,6 +35,7 @@ export function PearMark({
   gemColor?: GemColorKey;
   aspectRatio?: number;
   selected?: boolean;
+  callout?: "lock" | "conv" | null;
   showProngs?: boolean;
 }) {
   const uid = useId().replace(/:/g, "");
@@ -56,12 +58,18 @@ export function PearMark({
         </radialGradient>
       </defs>
       <g transform={`scale(${scaleX.toFixed(3)} ${scaleY.toFixed(3)})`}>
-        {selected && (
+        {(selected || callout) && (
           <path
             d={PEAR_PATH}
             transform="scale(1.58)"
             fill="none"
-            stroke="var(--color-primary)"
+            stroke={
+              callout === "lock"
+                ? "var(--color-gold)"
+                : callout === "conv"
+                  ? "var(--color-silver)"
+                  : "var(--color-primary)"
+            }
             strokeWidth={0.055}
             vectorEffect="non-scaling-stroke"
             opacity={0.9}
