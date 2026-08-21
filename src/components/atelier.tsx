@@ -32,6 +32,7 @@ import {
 } from "@/lib/necklace/history";
 import { useAtelier } from "@/lib/necklace/store";
 import { useTheme } from "@/lib/theme";
+import { useT } from "@/lib/locale";
 
 export function Atelier() {
   const result = useAtelier((s) => s.result);
@@ -49,6 +50,7 @@ export function Atelier() {
   const setNotes = useAtelier((s) => s.setNotes);
   const newProject = useAtelier((s) => s.newProject);
   const theme = useTheme((s) => s.theme);
+  const t = useT();
   const { user, isPending } = useCurrentUserState();
   const [saves, setSaves] = useState<SavedPattern[]>([]);
   const [history, setHistory] = useState<LocalProject[]>([]);
@@ -170,7 +172,7 @@ export function Atelier() {
 
           <div className="mb-5 space-y-3 border-b border-border pb-5">
             <p className="text-xs tracking-wide text-muted-foreground uppercase">
-              Project
+              {t("project")}
             </p>
             <div className="space-y-1.5">
               <Label htmlFor="project-id">Project ID</Label>
@@ -202,7 +204,7 @@ export function Atelier() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" onClick={onSaveLocal}>
-                <Save /> Save
+                <Save /> {t("save")}
               </Button>
               {user && !user.isDevFallback ? (
                 <Button size="sm" variant="secondary" onClick={() => void onSaveCloud()}>
@@ -210,15 +212,15 @@ export function Atelier() {
                 </Button>
               ) : null}
               <Button size="sm" variant="ghost" onClick={newProject}>
-                New ID
+                {t("newId")}
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="secondary" onClick={() => void onExportJpg()}>
-                <ImageDown /> HD JPG
+                <ImageDown /> {t("hdJpg")}
               </Button>
               <Button size="sm" variant="secondary" onClick={onExportJson}>
-                <Download /> JSON
+                <Download /> {t("json")}
               </Button>
             </div>
           </div>
@@ -228,7 +230,7 @@ export function Atelier() {
 
           <details className="mt-6 space-y-2 border-t border-border pt-4">
             <summary className="cursor-pointer text-xs tracking-wide text-muted-foreground uppercase">
-              History
+              {t("history")}
             </summary>
             {history.length === 0 ? (
               <p className="text-xs text-muted-foreground">

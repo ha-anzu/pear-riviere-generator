@@ -1,10 +1,10 @@
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Outfit:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @theme {
-  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --font-sans: "IBM Plex Sans", "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "IBM Plex Sans", "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
   --color-background: #0c0b0a;
@@ -40,36 +40,29 @@
   --radius: 10px;
 }
 
-html[data-theme="cyber"] {
-  --font-sans: "IBM Plex Mono", ui-monospace, monospace;
-  --font-display: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --color-background: #0a0a0f;
-  --color-foreground: #e5e7eb;
-  --color-card: #080205;
-  --color-card-foreground: #e5e7eb;
-  --color-popover: #0c0608;
-  --color-popover-foreground: #e5e7eb;
-  --color-muted: #12080c;
-  --color-muted-foreground: #9ca3af;
-  --color-border: #5a1224;
-  --color-input: #5a1224;
-  --color-primary: #ffcc00;
-  --color-primary-foreground: #0a0a0f;
-  --color-secondary: #16080c;
-  --color-secondary-foreground: #ffcc00;
-  --color-accent: #220810;
-  --color-accent-foreground: #ffcc00;
-  --color-destructive: #ff0033;
-  --color-ring: #ffcc00;
-  --color-gold: #ffcc00;
-  --color-silver: #c5c8ce;
-  --color-velvet: #050508;
-  --color-neon: #ff0033;
-  --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 4px;
-  --radius-xl: 4px;
-  --radius: 2px;
+html[data-theme="white"] {
+  --color-background: #f4f1ea;
+  --color-foreground: #161412;
+  --color-card: #ffffff;
+  --color-card-foreground: #161412;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #161412;
+  --color-muted: #ece7dc;
+  --color-muted-foreground: #5c564c;
+  --color-border: #d4cdc0;
+  --color-input: #d4cdc0;
+  --color-primary: #161412;
+  --color-primary-foreground: #f4f1ea;
+  --color-secondary: #ece7dc;
+  --color-secondary-foreground: #161412;
+  --color-accent: #e4ddd0;
+  --color-accent-foreground: #161412;
+  --color-destructive: #9f2d2d;
+  --color-ring: #161412;
+  --color-gold: #7a5b28;
+  --color-silver: #6b7080;
+  --color-velvet: #e7e1d4;
+  --color-neon: #161412;
 }
 
 @layer base {
@@ -123,43 +116,16 @@ html[data-theme="cyber"] {
   }
 }
 
-html[data-theme="cyber"] h1,
-html[data-theme="cyber"] h2,
-html[data-theme="cyber"] h3 {
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+html[lang="th"] {
+  font-size: 16px;
 }
 
-html[data-theme="cyber"] .rounded-2xl {
-  border-radius: 4px;
-}
-html[data-theme="cyber"] .rounded-xl {
-  border-radius: 4px;
-}
-html[data-theme="cyber"] .rounded-lg {
-  border-radius: 2px;
-}
-html[data-theme="cyber"] .rounded-md {
-  border-radius: 2px;
-}
-
-html[data-theme="cyber"] body::after {
-  content: "";
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 3px,
-    rgb(255 0 51 / 0.035) 4px
-  );
-}
-
-html[data-theme="cyber"] .cyber-glow {
-  color: var(--color-neon);
-  text-shadow: 0 0 12px rgb(255 0 51 / 0.45);
+@media print {
+  .no-print { display: none !important; }
+  html, body { background: white !important; color: black !important; }
+  #shop-sheet { display: block !important; border: 0 !important; box-shadow: none !important; }
+  #shop-sheet summary { display: none; }
+  #shop-sheet > div { display: block !important; }
 }
 
 .suite-menu {
@@ -219,9 +185,7 @@ html[data-theme="cyber"] .cyber-glow {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  html[data-theme="cyber"] body::after {
-    display: none;
-  }
+
 }
 
 @media print {

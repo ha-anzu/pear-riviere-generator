@@ -6,7 +6,7 @@ import { AuthProvider } from "@/lib/auth/provider";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "Pear Rivière Generator";
-const THEME_BOOT = `try{var t=localStorage.getItem('pear-riviere-theme');if(t==='cyber')document.documentElement.dataset.theme='cyber'}catch(e){}`;
+const THEME_BOOT = `try{var t=localStorage.getItem('riviere-theme');document.documentElement.dataset.theme=t==='white'?'white':'black';if(localStorage.getItem('riviere-lang')==='th')document.documentElement.lang='th'}catch(e){}`;
 
 export const Route = createRootRoute({
   head: () => ({

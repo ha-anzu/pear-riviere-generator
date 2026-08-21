@@ -15,44 +15,50 @@ import {
 import { cn } from "@/lib/utils";
 import { useAtelier } from "@/lib/necklace/store";
 import { formatColorPlan } from "@/lib/necklace/gem-colors";
+import { useT, type Msg } from "@/lib/locale";
 
 export function ManufacturingSheet({ result }: { result: PatternResult }) {
   const gemColors = useAtelier((state) => state.gemColors);
+  const t = useT();
   const copy = async () => {
     await copyText(
       `${formatBomText(result)}\n\nCOLOR PLAN\n${formatColorPlan(gemColors, result.totalPcs)}`,
     );
-    toast.success("Sheet copied");
+    toast.success(t("copied"));
   };
 
   return (
-    <details
+    <section
       id="shop-sheet"
-      className="rounded-2xl border border-border bg-card p-4 sm:p-5"
+      className="space-y-5 rounded-2xl border border-border bg-card p-4 sm:p-5"
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-        <h2 className="font-display text-xl leading-tight">Shop sheet</h2>
-        <Button size="sm" variant="secondary" onClick={(e) => { e.preventDefault(); void copy(); }}>
-          <Copy /> Copy
-        </Button>
-      </summary>
-      <div className="mt-4 space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-display text-xl font-semibold leading-tight">{t("shopSheet")}</h2>
+        <div className="flex gap-2">
+          <Button size="sm" variant="secondary" onClick={() => void copy()}>
+            <Copy /> {t("copy")}
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => window.print()}>
+            {t("print")}
+          </Button>
+        </div>
+      </div>
 
       <div className="grid gap-2 sm:grid-cols-3">
         <Stat
-          label="Finished length"
+          label={t("finishedLength")}
           value={`${result.lengthIn}″`}
           hint={`${result.lengthMm.toFixed(1)} mm`}
         />
         <Stat
-          label="Bracelet · back"
+          label={t("braceletBack")}
           value={`${result.braceletIn}″`}
-          hint={`incl. lock 1 · ${result.bracelet.pcs} pcs`}
+          hint={`${t("inclLock1")} · ${result.bracelet.pcs} ${t("pcs")}`}
         />
         <Stat
-          label="Necklace · front"
+          label={t("necklaceFront")}
           value={`${result.necklaceIn}″`}
-          hint={`incl. lock 2 + converters · ${result.necklace.pcs} pcs`}
+          hint={`${t("inclLock2")} · ${result.necklace.pcs} ${t("pcs")}`}
         />
       </div>
 
@@ -63,45 +69,45 @@ export function ManufacturingSheet({ result }: { result: PatternResult }) {
 
       <div>
         <p className="mb-2 text-xs tracking-wide text-muted-foreground uppercase">
-          Chain
+          {t("chain")}
         </p>
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          <LinkChip tone="lock">F1 box</LinkChip>
+          <LinkChip tone="lock">{t("f1")}</LinkChip>
           <Dash />
-          <LinkChip tone="bracelet">Bracelet {result.braceletIn}″</LinkChip>
+          <LinkChip tone="bracelet">{t("bracelet")} {result.braceletIn}″</LinkChip>
           <Dash />
-          <LinkChip tone="lock">M1 tongue</LinkChip>
+          <LinkChip tone="lock">{t("m1")}</LinkChip>
           <Join>R · M1→F2</Join>
-          <LinkChip tone="lock">F2 box</LinkChip>
+          <LinkChip tone="lock">{t("f2")}</LinkChip>
           <Dash />
-          <LinkChip tone="conv">Conv L</LinkChip>
+          <LinkChip tone="conv">{t("convL")}</LinkChip>
           <Dash />
-          <LinkChip tone="front">Front {result.necklaceIn}″</LinkChip>
+          <LinkChip tone="front">{t("front")} {result.necklaceIn}″</LinkChip>
           <Dash />
-          <LinkChip tone="conv">Conv R</LinkChip>
+          <LinkChip tone="conv">{t("convR")}</LinkChip>
           <Dash />
-          <LinkChip tone="lock">M2 tongue</LinkChip>
+          <LinkChip tone="lock">{t("m2")}</LinkChip>
           <Join>L · M2→F1</Join>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <BomBlock title="Bracelet BOM" seg={result.bracelet} ratio={result.ratio} />
-        <BomBlock title="Necklace BOM" seg={result.necklace} ratio={result.ratio} />
+        <BomBlock title={t("braceletBom")} seg={result.bracelet} ratio={result.ratio} />
+        <BomBlock title={t("necklaceBom")} seg={result.necklace} ratio={result.ratio} />
       </div>
 
       <div>
         <p className="mb-2 text-xs tracking-wide text-muted-foreground uppercase">
-          Findings
+          {t("findings")}
         </p>
         <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted text-left text-xs text-muted-foreground">
               <tr>
-                <th className="px-3 py-2 font-medium">Item</th>
-                <th className="px-3 py-2 font-medium">Size</th>
-                <th className="px-3 py-2 font-medium">Pcs</th>
-                <th className="px-3 py-2 font-medium">Stones on top</th>
+                <th className="px-3 py-2 font-medium">{t("item")}</th>
+                <th className="px-3 py-2 font-medium">{t("size")}</th>
+                <th className="px-3 py-2 font-medium">{t("pcs")}</th>
+                <th className="px-3 py-2 font-medium">{t("stonesOnTop")}</th>
               </tr>
             </thead>
             <tbody>
@@ -125,7 +131,7 @@ export function ManufacturingSheet({ result }: { result: PatternResult }) {
 
       <div>
         <p className="mb-2 text-xs tracking-wide text-muted-foreground uppercase">
-          Assembly order
+          {t("assembly")}
         </p>
         <ol className="space-y-2">
           {result.assembly.map((step) => (
@@ -137,8 +143,8 @@ export function ManufacturingSheet({ result }: { result: PatternResult }) {
                 {step.n}
               </span>
               <div>
-                <p className="text-sm font-medium">{step.title}</p>
-                <p className="text-xs text-muted-foreground">{step.detail}</p>
+                <p className="text-sm font-medium">{t(`step${step.n}` as Msg)}</p>
+                <p className="text-xs text-muted-foreground">{t(`step${step.n}d` as Msg)}</p>
               </div>
             </li>
           ))}
@@ -147,12 +153,12 @@ export function ManufacturingSheet({ result }: { result: PatternResult }) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ModeCard
-          title="Necklace mode"
-          body="Close both locks at the shoulders. Male 2 → female 1 (left). Male 1 → female 2 (right). Open either side."
+          title={t("necklaceMode")}
+          body={t("necklaceModeBody")}
         />
         <ModeCard
-          title="Bracelet mode"
-          body="Disconnect both converters. Close lock 1 on itself. Necklace strand stays on the converters."
+          title={t("braceletMode")}
+          body={t("braceletModeBody")}
         />
       </div>
 
@@ -162,8 +168,7 @@ export function ManufacturingSheet({ result }: { result: PatternResult }) {
         leftover {result.leftoverMm > 0 ? "+" : ""}
         {result.leftoverMm.toFixed(1)} mm of {result.lengthMm.toFixed(1)} mm
       </p>
-      </div>
-    </details>
+    </section>
   );
 }
 

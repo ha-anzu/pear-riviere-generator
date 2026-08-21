@@ -8,11 +8,12 @@ import {
 } from "@/lib/necklace/gem-colors";
 import { useAtelier } from "@/lib/necklace/store";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/locale";
 
-const SCOPES: { id: ColorScope; label: string }[] = [
-  { id: "stone", label: "This stone" },
-  { id: "pair", label: "Mirror pair" },
-  { id: "all", label: "All stones" },
+const SCOPE_KEYS: { id: ColorScope; key: "stone" | "pair" | "all" }[] = [
+  { id: "stone", key: "stone" },
+  { id: "pair", key: "pair" },
+  { id: "all", key: "all" },
 ];
 
 export function ColorStudio() {
@@ -24,6 +25,7 @@ export function ColorStudio() {
   const selectedColor =
     selectedIndex == null ? null : gemColorAt(gemColors, selectedIndex);
 
+  const t = useT();
   const apply = (color: GemColorKey) => {
     if (selectedIndex == null) return;
     paintGem(color);
@@ -34,17 +36,17 @@ export function ColorStudio() {
       <div className="flex items-center justify-between gap-2">
         <h2 id="color-studio-title" className="flex items-center gap-1.5 text-sm font-medium">
           <Palette className="size-3.5 text-gold" />
-          Color
+          {t("color")}
         </h2>
         <p className="text-[10px] text-muted-foreground">
           {selectedIndex == null
-            ? "Tap a stone"
+            ? t("tapStone")
             : GEM_COLORS[selectedColor ?? "colorless"].label}
         </p>
       </div>
 
       <div className="grid grid-cols-3 overflow-hidden rounded-lg border border-border" aria-label="Color scope">
-        {SCOPES.map((scope) => (
+        {SCOPE_KEYS.map((scope) => (
           <button
             key={scope.id}
             type="button"
@@ -57,7 +59,7 @@ export function ColorStudio() {
                 : "bg-muted text-muted-foreground hover:bg-accent",
             )}
           >
-            {scope.label}
+            {t(scope.key)}
           </button>
         ))}
       </div>

@@ -8,6 +8,7 @@ import type {
 } from "@/lib/necklace/engine";
 import { formatSize, pearShoulderRotation, stationLabel } from "@/lib/necklace/engine";
 import { gemColorAt, type GemColorKey } from "@/lib/necklace/gem-colors";
+import { useT } from "@/lib/locale";
 
 type Pos = {
   x: number;
@@ -148,6 +149,7 @@ export function NecklaceRing({
   metalColor: MetalColor;
   gemColors: GemColorKey[];
 }) {
+  const t = useT();
   const size = 720;
   const cx = size / 2;
   const cy = size / 2;
@@ -299,10 +301,10 @@ export function NecklaceRing({
         </g>
       ))}
 
-      {polarLabel(cx, cy, R + 40, -Math.PI / 2, "BACK", "var(--color-muted-foreground)", 10)}
-      {polarLabel(cx, cy, R + 40, Math.PI / 2, "FRONT", "var(--color-muted-foreground)", 10)}
-      {polarLabel(cx, cy, R + 40, leftAng, "L", "var(--color-gold)", 12)}
-      {polarLabel(cx, cy, R + 40, rightAng, "R", "var(--color-gold)", 12)}
+      {polarLabel(cx, cy, R + 40, -Math.PI / 2, t("back"), "var(--color-muted-foreground)", 10)}
+      {polarLabel(cx, cy, R + 40, Math.PI / 2, t("frontMark"), "var(--color-muted-foreground)", 10)}
+      {polarLabel(cx, cy, R + 40, leftAng, t("left"), "var(--color-gold)", 12)}
+      {polarLabel(cx, cy, R + 40, rightAng, t("right"), "var(--color-gold)", 12)}
 
       <text
         x={cx}

@@ -21,16 +21,18 @@ import {
 } from "@/lib/necklace/engine";
 import { PRESETS, useAtelier } from "@/lib/necklace/store";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/locale";
 
 export function ControlPanel() {
   const s = useAtelier();
+  const t = useT();
   const minSku = resolvePearSku(s.minSize, s.minWidth);
   const maxSku = resolvePearSku(s.maxSize, s.maxWidth);
   const single = minSku.id === maxSku.id;
 
   return (
     <div className="flex flex-col gap-5">
-      <Field label="Metal">
+      <Field label={t("metal")}>
         <div className="grid grid-cols-2 gap-2">
           {(["gold", "silver"] as const).map((m) => (
             <button
@@ -50,19 +52,19 @@ export function ControlPanel() {
                   m === "gold" ? "bg-gold" : "bg-silver",
                 )}
               />
-              {m === "gold" ? "Gold" : "Silver"}
+              {m === "gold" ? t("gold") : t("silver")}
             </button>
           ))}
         </div>
       </Field>
 
-      <Field label="Metal color">
+      <Field label={t("metalColor")}>
         <div className="grid grid-cols-3 gap-1.5">
           {(
             [
-              ["yellow", "Yellow"],
-              ["white", "White"],
-              ["rose", "Rose"],
+              ["yellow", t("yellow")],
+              ["white", t("whiteMetal")],
+              ["rose", t("rose")],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -91,7 +93,7 @@ export function ControlPanel() {
         </div>
       </Field>
 
-      <Field label="Length">
+      <Field label={t("length")}>
         <div className="grid grid-cols-5 gap-1.5">
           {INCHES.map((n) => (
             <button
@@ -111,7 +113,7 @@ export function ControlPanel() {
         </div>
       </Field>
 
-      <Field label="Back bracelet">
+      <Field label={t("backBracelet")}>
         <div className="grid grid-cols-3 gap-1.5">
           {BRACELET_IN.map((n) => (
             <button
@@ -137,12 +139,12 @@ export function ControlPanel() {
 
 
 
-      <Field label="Pattern">
+      <Field label={t("pattern")}>
         <div className="grid grid-cols-2 gap-2">
           {(
             [
-              ["range", "Min / max"],
-              ["list", "Stone list"],
+              ["range", t("range")],
+              ["list", t("list")],
             ] as const
           ).map(([id, label]) => (
             <button
