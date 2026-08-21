@@ -20,7 +20,7 @@ import {
   type SavedPattern,
 } from "@/lib/necklace/api";
 import { exportHdJpg, exportJson } from "@/lib/necklace/export-jpg";
-import { formatCarat, formatMoney, formatPearSize } from "@/lib/necklace/engine";
+import { formatCarat } from "@/lib/necklace/engine";
 import {
   deleteHistoryItem,
   loadHistory,
@@ -164,13 +164,9 @@ export function Atelier() {
       <AppHeader />
       <main className="mx-auto grid min-w-0 max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
         <aside className="no-print order-2 min-w-0 rounded-2xl border border-border bg-card p-4 lg:order-1 lg:p-5">
-          <h1 className="font-display text-2xl leading-tight tracking-normal normal-case">
-            Build a run
+          <h1 className="font-display mb-4 text-2xl leading-tight tracking-normal normal-case">
+            Pear rivière
           </h1>
-          <p className="mt-1 mb-5 text-sm text-muted-foreground">
-            Pear rivière. Bracelet at 12 o’clock, rounded center at 6, locks at
-            the shoulders.
-          </p>
 
           <div className="mb-5 space-y-3 border-b border-border pb-5">
             <p className="text-xs tracking-wide text-muted-foreground uppercase">
@@ -230,10 +226,10 @@ export function Atelier() {
           <ControlPanel />
           <ColorStudio />
 
-          <div className="mt-6 space-y-2 border-t border-border pt-4">
-            <p className="text-xs tracking-wide text-muted-foreground uppercase">
+          <details className="mt-6 space-y-2 border-t border-border pt-4">
+            <summary className="cursor-pointer text-xs tracking-wide text-muted-foreground uppercase">
               History
-            </p>
+            </summary>
             {history.length === 0 ? (
               <p className="text-xs text-muted-foreground">
                 No saved projects yet. Save keeps the last 30 on this device.
@@ -267,14 +263,8 @@ export function Atelier() {
                 ))}
               </ul>
             )}
-          </div>
-
-          <div className="mt-4 space-y-2 border-t border-border pt-4">
-            <p className="text-xs tracking-wide text-muted-foreground uppercase">
-              Account saves
-            </p>
-            {user && !user.isDevFallback ? (
-              <ul className="space-y-1">
+            {user && !user.isDevFallback && saves.length > 0 ? (
+              <ul className="mt-2 space-y-1">
                 {saves.map((p) => (
                   <li
                     key={p.id}
@@ -296,36 +286,23 @@ export function Atelier() {
                     </button>
                   </li>
                 ))}
-                {saves.length === 0 && (
-                  <p className="text-xs text-muted-foreground">None yet.</p>
-                )}
               </ul>
-            ) : user?.isDevFallback ? (
-              <p className="text-xs text-muted-foreground">
-                Local-only mode. Configure auth and Postgres to enable sync.
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Sign in to sync named runs across devices.
-              </p>
-            )}
-          </div>
+            ) : null}
+          </details>
         </aside>
 
         <section className="order-1 min-w-0 space-y-4 lg:order-2">
           <div
             ref={previewRef}
-            className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]"
+            className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-velvet"
           >
-            <div className="aspect-square overflow-hidden rounded-2xl border border-border bg-velvet">
-              <NecklaceRing
-                result={result}
-                selectedIndex={selectedIndex}
-                onSelect={setSelected}
-                metalColor={metalColor}
-                gemColors={gemColors}
-              />
-            </div>
+            <NecklaceRing
+              result={result}
+              selectedIndex={selectedIndex}
+              onSelect={setSelected}
+              metalColor={metalColor}
+              gemColors={gemColors}
+            />
             <GemPreview
               result={result}
               selectedIndex={selectedIndex}
@@ -337,18 +314,10 @@ export function Atelier() {
           <div className="flex flex-wrap gap-2 text-xs tabular-nums text-muted-foreground">
             <Chip>{result.totalPcs} pcs</Chip>
             <Chip>{formatCarat(result.totalCarat)} ct</Chip>
-            <Chip>{formatMoney(result.totalCost)}</Chip>
-            <Chip>
-              {result.braceletIn}″ back · {result.necklaceIn}″ front
-            </Chip>
-            <Chip>lock {formatPearSize(result.minSize, result.ratio)} mm × 2</Chip>
-            <Chip>tip out · catalog L×W</Chip>
-            <Chip>gap {result.gapMm.toFixed(2)} mm</Chip>
             <Chip>
               leftover {result.leftoverMm > 0 ? "+" : ""}
               {result.leftoverMm.toFixed(1)} mm
             </Chip>
-            {projectName ? <Chip>{projectName}</Chip> : null}
           </div>
 
           <StrandView

@@ -26,23 +26,17 @@ export function ManufacturingSheet({ result }: { result: PatternResult }) {
   };
 
   return (
-    <section
+    <details
       id="shop-sheet"
-      className="space-y-5 rounded-2xl border border-border bg-card p-4 sm:p-5"
+      className="rounded-2xl border border-border bg-card p-4 sm:p-5"
     >
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="font-display text-2xl leading-tight">
-            Manufacturing sheet
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Convertible pear rivière · bracelet back · two-lock necklace
-          </p>
-        </div>
-        <Button size="sm" variant="secondary" onClick={() => void copy()}>
-          <Copy /> Copy sheet
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+        <h2 className="font-display text-xl leading-tight">Shop sheet</h2>
+        <Button size="sm" variant="secondary" onClick={(e) => { e.preventDefault(); void copy(); }}>
+          <Copy /> Copy
         </Button>
-      </div>
+      </summary>
+      <div className="mt-4 space-y-5">
 
       <div className="grid gap-2 sm:grid-cols-3">
         <Stat
@@ -168,7 +162,8 @@ export function ManufacturingSheet({ result }: { result: PatternResult }) {
         leftover {result.leftoverMm > 0 ? "+" : ""}
         {result.leftoverMm.toFixed(1)} mm of {result.lengthMm.toFixed(1)} mm
       </p>
-    </section>
+      </div>
+    </details>
   );
 }
 

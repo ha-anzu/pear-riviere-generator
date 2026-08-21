@@ -3,7 +3,6 @@ import type { CSSProperties } from "react";
 import {
   GEM_COLORS,
   gemColorAt,
-  gemColorCounts,
   type ColorScope,
   type GemColorKey,
 } from "@/lib/necklace/gem-colors";
@@ -17,7 +16,6 @@ const SCOPES: { id: ColorScope; label: string }[] = [
 ];
 
 export function ColorStudio() {
-  const result = useAtelier((state) => state.result);
   const selectedIndex = useAtelier((state) => state.selectedIndex);
   const gemColors = useAtelier((state) => state.gemColors);
   const colorScope = useAtelier((state) => state.colorScope);
@@ -25,7 +23,6 @@ export function ColorStudio() {
   const paintGem = useAtelier((state) => state.paintGem);
   const selectedColor =
     selectedIndex == null ? null : gemColorAt(gemColors, selectedIndex);
-  const counts = gemColorCounts(gemColors, result.totalPcs);
 
   const apply = (color: GemColorKey) => {
     if (selectedIndex == null) return;
@@ -33,17 +30,17 @@ export function ColorStudio() {
   };
 
   return (
-    <section className="mt-6 space-y-3 border-t border-border pt-5" aria-labelledby="color-studio-title">
-      <div className="flex items-center gap-2">
-        <Palette className="size-4 text-gold" />
-        <div>
-          <h2 id="color-studio-title" className="text-sm font-medium">Gem color studio</h2>
-          <p className="text-xs text-muted-foreground">
-            {selectedIndex == null
-              ? "Select a stone in the circular or strand preview."
-              : `Stone ${selectedIndex + 1} of ${result.totalPcs} · ${GEM_COLORS[selectedColor ?? "colorless"].label}`}
-          </p>
-        </div>
+    <section className="mt-5 space-y-2 border-t border-border pt-4" aria-labelledby="color-studio-title">
+      <div className="flex items-center justify-between gap-2">
+        <h2 id="color-studio-title" className="flex items-center gap-1.5 text-sm font-medium">
+          <Palette className="size-3.5 text-gold" />
+          Color
+        </h2>
+        <p className="text-[10px] text-muted-foreground">
+          {selectedIndex == null
+            ? "Tap a stone"
+            : GEM_COLORS[selectedColor ?? "colorless"].label}
+        </p>
       </div>
 
       <div className="grid grid-cols-3 overflow-hidden rounded-lg border border-border" aria-label="Color scope">
@@ -54,7 +51,7 @@ export function ColorStudio() {
             aria-pressed={colorScope === scope.id}
             onClick={() => setColorScope(scope.id)}
             className={cn(
-              "min-h-11 border-r border-border px-1.5 text-xs last:border-r-0",
+              "h-9 border-r border-border px-1 text-[10px] last:border-r-0",
               colorScope === scope.id
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:bg-accent",
@@ -65,35 +62,26 @@ export function ColorStudio() {
         ))}
       </div>
 
-      <div className="grid grid-cols-5 gap-1.5" aria-label="Gem colors">
+      <div className="grid grid-cols-5 gap-1" aria-label="Gem colors">
         {Object.entries(GEM_COLORS).map(([key, color]) => (
           <button
             key={key}
             type="button"
             disabled={selectedIndex == null}
+            title={color.label}
             aria-label={`Apply ${color.label}`}
             aria-pressed={selectedColor === key}
             onClick={() => apply(key as GemColorKey)}
             className={cn(
-              "gem-swatch min-h-12 rounded-md border px-1 py-1 text-center text-muted-foreground transition-colors",
+              "gem-swatch flex min-h-9 items-center justify-center rounded-md border",
               selectedColor === key
-                ? "border-primary text-foreground"
+                ? "border-primary"
                 : "border-border hover:border-primary",
             )}
             style={{ "--gem-fill": color.fill, "--gem-light": color.light } as CSSProperties}
           >
-            <span className="mx-auto block size-5 rounded-full" />
-            <span className="mt-1 block truncate text-[9px]">{color.label}</span>
+            <span className="block size-4 rounded-full" />
           </button>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap gap-1.5" aria-label="Current color allocation">
-        {counts.map((item) => (
-          <span key={item.key} className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[10px] text-muted-foreground">
-            <i className="size-2 rounded-full" style={{ background: item.fill }} />
-            {item.label} · {item.count}
-          </span>
         ))}
       </div>
     </section>

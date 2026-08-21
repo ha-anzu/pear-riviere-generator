@@ -54,9 +54,6 @@ export function ControlPanel() {
             </button>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {s.metal === "gold" ? "Gold setting · catalog pear sizes" : "Silver setting · catalog pear sizes"}
-        </p>
       </Field>
 
       <Field label="Metal color">
@@ -138,9 +135,7 @@ export function ControlPanel() {
         </p>
       </Field>
 
-      <p className="text-xs text-muted-foreground">
-        Catalog length × width only. Pitch uses width. Tips point outward.
-      </p>
+
 
       <Field label="Pattern">
         <div className="grid grid-cols-2 gap-2">

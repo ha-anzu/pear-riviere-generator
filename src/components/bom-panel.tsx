@@ -42,10 +42,7 @@ export function BomPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-2xl leading-tight">Size list</h2>
-          <p className="text-xs text-muted-foreground">
-            Largest at the front · locks & converters set in smallest
-          </p>
+          <h2 className="font-display text-xl leading-tight">Size list</h2>
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="secondary" onClick={() => void copy()}>

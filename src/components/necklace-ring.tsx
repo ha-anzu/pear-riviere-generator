@@ -6,7 +6,7 @@ import type {
   PatternResult,
   StationKind,
 } from "@/lib/necklace/engine";
-import { formatPearSize, formatSize, pearShoulderRotation, stationLabel } from "@/lib/necklace/engine";
+import { formatSize, pearShoulderRotation, stationLabel } from "@/lib/necklace/engine";
 import { gemColorAt, type GemColorKey } from "@/lib/necklace/gem-colors";
 
 type Pos = {
@@ -306,7 +306,7 @@ export function NecklaceRing({
 
       <text
         x={cx}
-        y={cy - 18}
+        y={cy - 6}
         textAnchor="middle"
         fill="var(--color-foreground)"
         fontSize={28}
@@ -316,23 +316,13 @@ export function NecklaceRing({
       </text>
       <text
         x={cx}
-        y={cy + 8}
+        y={cy + 16}
         textAnchor="middle"
         fill="var(--color-muted-foreground)"
         fontSize={12}
         fontFamily="ui-sans-serif, system-ui, sans-serif"
       >
-        {result.braceletIn}″ bracelet · {result.necklaceIn}″ front
-      </text>
-      <text
-        x={cx}
-        y={cy + 26}
-        textAnchor="middle"
-        fill="var(--color-muted-foreground)"
-        fontSize={11}
-        fontFamily="ui-sans-serif, system-ui, sans-serif"
-      >
-        L M2→F1 · R M1→F2 · lock {formatPearSize(result.minSize, result.ratio)} mm
+        {result.braceletIn}″ back · {result.necklaceIn}″ front
       </text>
     </svg>
   );

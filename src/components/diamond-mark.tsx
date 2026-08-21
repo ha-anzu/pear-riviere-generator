@@ -14,6 +14,9 @@ import {
 
 const PEAR_PATH =
   "M 0 -1 C .10 -.77 .46 -.43 .58 .02 C .76 .70 .37 1 0 1 C -.37 1 -.76 .70 -.58 .02 C -.46 -.43 -.10 -.77 0 -1 Z";
+/** Native path is tip-up: full height 2, max width ~1.52. */
+const PATH_HALF_W = 0.76;
+const PATH_HALF_H = 1;
 
 /** Real pear silhouette. The point is up until its caller applies orientation. */
 export function PearMark({
@@ -36,8 +39,9 @@ export function PearMark({
   const uid = useId().replace(/:/g, "");
   const paint = METAL_COLOR[metalColor ?? defaultMetalColor(metal)];
   const fillId = `${uid}-pear`;
-  const scaleX = r;
-  const scaleY = r * Math.max(1.1, aspectRatio);
+  const ratio = Math.max(1.2, aspectRatio);
+  const scaleX = r / PATH_HALF_W;
+  const scaleY = (r * ratio) / PATH_HALF_H;
   const simple = r < 2.5;
   const gem = GEM_COLORS[gemColor];
 
@@ -65,7 +69,7 @@ export function PearMark({
         )}
         <path
           d={PEAR_PATH}
-          transform="scale(1.20)"
+          transform="scale(1.08)"
           fill={paint.fill}
           stroke={paint.dark}
           strokeWidth={0.04}
