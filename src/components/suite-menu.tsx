@@ -2,7 +2,7 @@ import { Gem, Layers3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT, type Msg } from "@/lib/locale";
 
-export type SuiteTool = "necklace" | "bracelet" | "pear";
+export type SuiteTool = "necklace" | "bracelet" | "pear" | "mixed";
 
 const TOOLS: { id: SuiteTool; label: Msg; href: string }[] = [
   {
@@ -19,6 +19,11 @@ const TOOLS: { id: SuiteTool; label: Msg; href: string }[] = [
     id: "pear",
     label: "pearTool",
     href: "https://hanzutech.com/opentools/pear-riviere-generator/",
+  },
+  {
+    id: "mixed",
+    label: "mixedCutTool",
+    href: "https://hanzutech.com/opentools/mixed-cut-bracelet-generator/",
   },
 ];
 

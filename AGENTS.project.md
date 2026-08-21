@@ -1,26 +1,40 @@
 # Rivière Pattern Suite — development spec
 
-This is the source of truth for continuing the pack. Read this before changing any of the three generators or the OpenTools hub.
+This is the source of truth for continuing the pack. Read this before changing any generator or the OpenTools hub.
 
 Hani (GitHub `ha-anzu`, Hanzu Tech). Shop-floor jewelry CAD + manufacturing tools. Do not rebuild from scratch. Do not invent a different convertible model.
+
+Copy this file into each generator as `AGENTS.project.md` after suite-wide spec edits.
 
 ---
 
 ## Product
 
-One suite, three silhouettes, one visual language.
+One suite, four silhouettes, one visual language.
 
-| Style | App | Live URL on hanzutech.com | Vercel app (iframed) |
-| --- | --- | --- | --- |
-| Round tennis necklace (convertible) | `light-spring-sail-bamboo` | `/opentools/tennis-necklace-generator/` | `https://light-spring-sail-bamboo.vercel.app/` |
-| Round diamond bracelet | `round-diamond-bracelet-generator` | `/opentools/round-diamond-bracelet-generator/` | hosted from that repo |
-| Pear rivière (convertible) | `pear-riviere-generator` | `/opentools/pear-riviere-generator/` | `https://pear-riviere-generator.vercel.app/` |
+| Style | Display name | App / repo | Live on hanzutech.com | Vercel |
+| --- | --- | --- | --- | --- |
+| Round tennis necklace (convertible) | Round necklace | `light-spring-sail-bamboo` | `/opentools/tennis-necklace-generator/` | `https://light-spring-sail-bamboo.vercel.app/` |
+| Round diamond bracelet | Round bracelet | `round-diamond-bracelet-generator` | `/opentools/round-diamond-bracelet-generator/` | `https://round-diamond-bracelet-generator.vercel.app/` |
+| Pear rivière (convertible) | Pear rivière | `pear-riviere-generator` | `/opentools/pear-riviere-generator/` | `https://pear-riviere-generator.vercel.app/` |
+| Mixed-cut bracelet (cushion / square / pear packer) | Mixed-cut bracelet | `mixed-cut-bracelet-generator` (source started as `cobalt-blue-scarlet-tiger`) | `/opentools/mixed-cut-bracelet-generator/` | `https://mixed-cut-bracelet-generator.vercel.app/` |
 
 Hub: `/opentools/riviere-pattern-suite/`
 
-OpenTools main page lists **only the suite**, not the three tools as separate cards. Users pick a style from the hub or the in-app suite menu.
+OpenTools main page lists **only the suite**, not the four tools as separate cards. Users pick a style from the hub or the in-app suite menu.
 
-Local workspace:
+Thai names:
+
+| EN | TH |
+| --- | --- |
+| Round necklace | สร้อยเทนนิสกลม |
+| Round bracelet | สร้อยข้อมือกลม |
+| Pear rivière | สร้อยเพชรหยดน้ำ |
+| Mixed-cut bracelet | สร้อยข้อมือทรงผสม |
+
+---
+
+## Local workspace
 
 ```
 C:\Users\ADMIN\OneDrive\Hanzu.Dev\Hanzu Tech OU\Repo\
@@ -28,31 +42,55 @@ C:\Users\ADMIN\OneDrive\Hanzu.Dev\Hanzu Tech OU\Repo\
   light-spring-sail-bamboo\
   round-diamond-bracelet-generator\
   pear-riviere-generator\
+  mixed-cut-bracelet-generator\   (or cobalt-blue-scarlet-tiger while renaming)
 ```
+
+Grok sessions often start in `C:\WINDOWS\system32`. That is **not** the repo. Always `cd` into the OneDrive path above before git/npm.
 
 `hanzutech.com` is Next.js `output: "export"`. The file that actually serves OpenTools is **`public/opentools/`**. Always write that path. Keep the root `opentools/` copy in sync. A first push to root `opentools/` 404s because Next serves `public/opentools/`.
 
-Custom domain = GitHub Pages. Vercel project `prj_3GmqthhrJIoTVZABzBIIl7JSSsHD`, team `team_LAA1vYNhAbwexyDSFH8WO4QH`.
+Custom domain = GitHub Pages from **`hanzutech.com` `main`**. Vercel team `team_LAA1vYNhAbwexyDSFH8WO4QH`.
+
+Site Vercel project `prj_3GmqthhrJIoTVZABzBIIl7JSSsHD`.
 
 ---
 
-## Uniform chrome (all three tools)
+## Agent / Windows gotchas (discovered)
+
+- PowerShell execution policy blocks `npx.ps1` and `npm.ps1`. Run local binaries with `node .\node_modules\typescript\bin\tsc --noEmit`.
+- `&&` is not supported in the Grok shell. Chain with `;`.
+- `grep` / `find` / `sed` are not in this shell. Use the dedicated tools.
+- Typecheck TanStack apps with `tsc --noEmit` before calling done.
+- Necklace production branch is **`main`** (also mirrored on `fix/production-build`).
+- Bracelet production branch is **`feat/round-diamond-bracelet-generator`** (keep `feat/react-rebuild` in sync).
+- Pear production branch is **`main`**.
+- Do not commit `.vercel/output` or `node_modules`.
+- SVG numbers: `toFixed(3)` to avoid hydration mismatch.
+- No horizontal page overflow. Strand/tables may scroll internally (`min-w-0` + `overflow-x-auto`).
+- Do not kill a live 8080 preview if one is running in Grok Build.
+- Do not gold-plate. Do not replace the convertible station model.
+
+---
+
+## Uniform chrome (all four tools)
 
 Must look like the same product.
 
-- Dual theme: `html[data-theme="atelier"|"cyber"]`, localStorage key per app. Atelier default for necklace/pear (Rivière, Cormorant + Outfit, velvet gold). Cyber is HANZU TECH (IBM Plex, red/yellow).
-- Header: atelier wordmark **Rivière**, cyber **HANZU TECH**, plus a style subtitle (`Round necklace` / `Round bracelet` / `Pear rivière`).
-- Suite menu on every tool: Pattern suite · Round necklace · Round bracelet · Pear rivière. Links use `https://hanzutech.com/opentools/...` with `target="_top"` so they escape the iframe.
-- Buttons `h-11`, tap ≥ 44px. No emoji icons. lucide-react on TanStack apps. Tokens from each app’s CSS — no raw hex in new JSX except gem/metal fills that already live in the color tables.
-- Color studio: same 15 gem keys, same this-stone / mirror-pair / all scopes.
+- Dual theme: `html[data-theme="black"|"white"]`. Shared localStorage key **`riviere-theme`**. Legacy `atelier` / `cyber` map to **black**. Default black.
+- Dual language: `html lang="en"|"th"`. Shared localStorage key **`riviere-lang`**. Fonts IBM Plex Sans + IBM Plex Mono + Noto Sans Thai.
+- Header: wordmark **Rivière**, style subtitle, EN|ไทย, Black|White, then the suite menu.
+- Suite menu on every tool: All styles · Round necklace · Round bracelet · Pear rivière · Mixed-cut bracelet. Links use `https://hanzutech.com/opentools/...` with `target="_top"` so they escape the iframe.
+- Buttons in chrome `h-11`, tap ≥ 44px. No emoji icons. lucide-react on TanStack apps. Tokens from each app’s CSS — no raw hex in new JSX except gem/metal fills that already live in the color tables.
 - Metal setting color: yellow / white / rose.
-- Local-first history, JSON + HD export, manufacturing sheet / BOM.
+- Local-first history / persist, JSON or CSV + HD export, shop sheet / BOM.
+- Gem preview overlay: small SVG mark, bottom-right, pointer-events none, size + carat/name. Not a CSS circle card.
+- Hardware callouts: convertible rings label **LOCK** and **CONVERTER** (L / R) with arrows. Bracelet clasp is **LOCK**. Mixed-cut labels **LOCK** when a clasp reserve is drawn.
 
-Do not mix atelier velvet tokens into cyber neon, or the reverse.
+Do not mix black-theme velvet tokens into white, or the reverse.
 
 ---
 
-## Shared gem color studio
+## Shared gem color studio (round + pear + round bracelet)
 
 Keys are stable (saved projects). **Labels are gemstone names**, not generic hues.
 
@@ -80,9 +118,43 @@ Files:
 - `pear-riviere-generator/src/lib/necklace/gem-colors.ts`
 - `round-diamond-bracelet-generator/bracelet-engine.js` (`GEM_COLORS`)
 
-Keep the three tables identical. Paint applies to selected stone, its palindrome pair, or the full run. Colors travel in JSON, BOM, and JPG.
+Paint applies to selected stone, its palindrome pair, or the full run. Colors travel in JSON, BOM, and JPG.
 
 This is **not** GIA D–Z. Setting metal is a separate control.
+
+The mixed-cut tool uses a **different inventory**: 57 real spinel/CZ stones with families indigo / violet / rose / magenta / fuchsia / peach / cognac / tangerine. Do not force the 15-key studio onto that inventory. Keep its family colors; still share suite chrome, metal quotes, and overlay preview.
+
+---
+
+## Metal weight and final pricing
+
+Shop reference: **one 4.5 mm round Ag925 bezel = 0.4 g**.
+
+- Round bezel grams = `0.4 × (d / 4.5)³`
+- Pear / cushion / mixed-cut grams = same formula with equivalent diameter `√(L × W)` (or `√(W × H)`)
+- Every station / placed stone is one bezel (locks, converters, melee rounds included)
+- Alloy grams = Ag925 grams × `density_alloy / 10.36`
+
+Alloys always shown in the shop sheet, in this order:
+
+| id | label | density g/cm³ | default $/g |
+| --- | --- | --- | --- |
+| k18 | 18K gold | 15.45 | 114 |
+| k14 | 14K gold | 13.07 | 89 |
+| k9 | 9K gold | 11.35 | 57 |
+| ag925 | Silver 925 | 10.36 | 2.4 |
+| pt950 | Platinum | 21.40 | 63 |
+
+`$ /g` is editable. Grand total per alloy = stone `$/ct` + metal grams × `$/g`. Stone cost stays on `PatternResult.totalCost` (or CZ ct × `$/ct` on mixed-cut); metal quotes are extra.
+
+Files:
+
+- `light-spring-sail-bamboo/src/lib/necklace/metal-weight.ts`
+- `pear-riviere-generator/src/lib/necklace/metal-weight.ts`
+- `round-diamond-bracelet-generator/metal-weight.js`
+- `mixed-cut-bracelet-generator/src/lib/metal-weight.ts`
+
+Keep the four copies identical.
 
 ---
 
@@ -166,12 +238,15 @@ Repo: `light-spring-sail-bamboo` (TanStack Start + React 19 + Tailwind v4 + zust
 
 Key files:
 
-- `src/lib/necklace/engine.ts` — stations, BOM, findings, assembly
-- `src/lib/necklace/store.ts` — `braceletIn`, compute, presets
+- `src/lib/necklace/engine.ts` — stations, BOM, findings, assembly, metal weights
+- `src/lib/necklace/store.ts` — `braceletIn`, `metalPrices`, compute, presets
 - `src/lib/necklace/gem-colors.ts`
-- `src/components/necklace-ring.tsx` — station layout, BACK/L/FRONT/R
+- `src/lib/necklace/metal-weight.ts`
+- `src/lib/locale.ts` / `src/lib/theme.ts`
+- `src/components/necklace-ring.tsx` — stations, BACK/FRONT, LOCK/CONVERTER arrows
 - `src/components/manufacturing-sheet.tsx`
-- `src/components/color-studio.tsx`
+- `src/components/metal-quote.tsx`
+- `src/components/gem-preview.tsx`
 - `src/components/suite-menu.tsx`
 
 Ring layout **from `result.stations`**, not empty clasp gap.
@@ -188,9 +263,9 @@ Examples RN / RR are FRONT lists. Bracelet auto-fills in smallest.
 
 ## Round bracelet specifics
 
-Repo: `round-diamond-bracelet-generator` (Vite + React). Lengths 6, 6.25, 6.5, 7, 7.5, 8 inches. Palindromic graduation. Physical spacing. Color studio already first-class.
+Repo: `round-diamond-bracelet-generator` (Vite + React). Lengths 6, 6.25, 6.5, 7, 7.5, 8 inches. Palindromic graduation. Physical spacing. Color studio first-class.
 
-Keep it visually in the same family: cyber/atelier themes, suite menu, gemstone color names, manufacturing sheet.
+Keep it visually in the same family: black/white, EN/TH, suite menu, gemstone color names, `DiamondMark` overlay, LOCK arrow at 12 o’clock, manufacturing sheet with five-alloy quotes.
 
 ---
 
@@ -249,11 +324,37 @@ Rounded lobe faces the neck. Do not restore shoulder-sweep (tips following the s
 
 Pitch = **width + gap**. Visual `r` on the ring is width-based. `PearMark` scaleX = r (width, tangent after rotation), scaleY = r × (L/W) (length, radial).
 
+`PearMark` path is scaled to half-width 0.76 / half-height 1 so visual L/W matches catalog. Do not multiply the native path ratio by catalog L/W again (that squeezed pears).
+
 Depth for non-catalog fallback: 61% of width. Catalog carat overrides the L×W×depth×0.006 estimate.
 
 Default seed: gold 16″, bracelet 7″, **5 × 3 mm**, gap 0.28.
 
 Hardware (locks + converters + bracelet) stay on the **smallest catalog SKU**.
+
+---
+
+## Mixed-cut bracelet specifics
+
+Repo: `mixed-cut-bracelet-generator`. Originated as Grok Build app `cobalt-blue-scarlet-tiger` (OG title “Carpet Lay”). Keep the packing engine. Do not replace it with the tennis generator.
+
+What it is: pack a **fixed inventory of 57 mixed stones** (cushion, cushion-square, pear) into a bracelet rectangle, 2–4 rows by width, 0.10 mm girdle gap. Color families stay scattered. User can swap two stones. Flat layout + wrist wrap views.
+
+Key files:
+
+- `src/lib/gems.ts` — inventory, families, target 165 × 22 mm
+- `src/lib/layout.ts` — packer, melee fill, seed
+- `src/lib/geom.ts` / `src/lib/gem-paths.ts`
+- `src/components/bracelet-view.tsx` — pan/zoom, LOCK callout, gem overlay
+- `src/components/sidebar.tsx` — size, shop sheet, metal quotes
+- `src/lib/metal-weight.ts`
+- `src/lib/locale.ts` / `src/lib/theme.ts`
+
+Length 140–210 mm, width 12–34 mm. Rows: width < 16.5 → 2, < 25.5 → 3, else 4.
+
+Bezel grams: `√(W × H)` per placed stone + round melee diameters. CZ `$/ct` default 8. Same five-alloy quote table.
+
+Do not convert this into a graduated tennis necklace. Do not drop the 57-stone inventory.
 
 ---
 
@@ -263,25 +364,36 @@ Hardware (locks + converters + bracelet) stay on the **smallest catalog SKU**.
 
 Hub `public/opentools/riviere-pattern-suite/index.html` is the style picker.
 
+When adding a tool:
+
+1. Restyle to suite chrome (theme, i18n, menu, overlay, metal quotes).
+2. Create a **properly named public repo** (not the Grok color-name).
+3. Push, deploy Vercel (`create_git_project` with team `team_LAA1vYNhAbwexyDSFH8WO4QH`).
+4. Add iframe page under `public/opentools/<slug>/` and copy to root `opentools/`.
+5. Add hub card + nav + every suite menu.
+6. Do **not** add a separate OpenTools card.
+7. Update this spec and copy to `AGENTS.project.md` in each generator.
+
 ---
 
 ## Quality gates
 
-- Typecheck (`tsc --noEmit`) on TanStack apps before calling done.
-- Pear: `node --test src/lib/necklace/engine.test.ts`
+- Typecheck (`tsc --noEmit`) on TanStack apps. Use `node .\node_modules\typescript\bin\tsc --noEmit` on this Windows box.
+- Pear: `node --test --experimental-strip-types src/lib/necklace/engine.test.ts`
 - Bracelet: `node --test bracelet-engine.test.mjs`
-- SVG coords `toFixed(3)` to avoid hydration mismatch.
-- No horizontal page overflow. Strand/tables may scroll internally (`min-w-0` + `overflow-x-auto`).
-- Do not gold-plate. Do not replace the convertible model. Do not kill a live 8080 preview if one is running in Grok Build.
+- Mixed-cut: keep existing packer tests if present.
+- After git push, confirm Vercel `state: READY` for production.
 
 ---
 
 ## What not to do
 
-- Do not put the three tools back as separate OpenTools cards. They live under the suite.
-- Do not rename gem color **keys** (breaks saved projects). Labels may be refined.
+- Do not put the four tools back as separate OpenTools cards. They live under the suite.
+- Do not rename gem color **keys** on the tennis tools (breaks saved projects). Labels may be refined.
 - Do not space pears by length.
 - Do not point pear tips inward or along the strand.
 - Do not invent pear sizes outside the catalog.
 - Do not use empty 3-stone clasp gaps in the ring.
 - Do not write only `opentools/` and skip `public/opentools/`.
+- Do not keep a new jewelry tool under a Grok color-name repo as the public identity. Rename (`mixed-cut-bracelet-generator`, not `cobalt-blue-scarlet-tiger`).
+- Do not mix mixed-cut inventory colors into the 15-key tennis studio, or the reverse.
