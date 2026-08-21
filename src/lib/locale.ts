@@ -114,6 +114,17 @@ const EN = {
   name: "Name",
   notes: "Notes",
   backSolveGap: "Fit gap from this count",
+  metalWeight: "Metal weight",
+  metalPrice: "Metal $/g",
+  grams: "g",
+  perGram: "$/g",
+  metalCost: "Metal",
+  stoneCost: "Stones",
+  grandTotal: "Total",
+  bezelNote:
+    "Bezel: 4.5 mm Ag925 = 0.4 g. Scales with size³. Pear uses √(L×W). Alloy by density.",
+  lockCallout: "LOCK",
+  converterCallout: "CONVERTER",
 } as const;
 
 const TH: Record<keyof typeof EN, string> = {
@@ -226,6 +237,17 @@ const TH: Record<keyof typeof EN, string> = {
   name: "ชื่อ",
   notes: "หมายเหตุ",
   backSolveGap: "คำนวณช่องไฟจากจำนวนเม็ด",
+  metalWeight: "น้ำหนักโลหะ",
+  metalPrice: "โลหะ $/กรัม",
+  grams: "กรัม",
+  perGram: "$/กรัม",
+  metalCost: "โลหะ",
+  stoneCost: "พลอย",
+  grandTotal: "รวม",
+  bezelNote:
+    "บีดเซล: 4.5 มม. เงิน 925 = 0.4 กรัม คูณตามขนาด³ เพียร์ใช้ √(ยาว×กว้าง)",
+  lockCallout: "ล็อค",
+  converterCallout: "คอนเวอร์เตอร์",
 };
 
 export type Msg = keyof typeof EN;

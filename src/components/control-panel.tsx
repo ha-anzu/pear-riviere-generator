@@ -20,6 +20,7 @@ import {
   type LengthIn,
 } from "@/lib/necklace/engine";
 import { PRESETS, useAtelier } from "@/lib/necklace/store";
+import { MetalPriceFields } from "@/components/metal-quote";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/locale";
 
@@ -355,6 +356,8 @@ export function ControlPanel() {
           ))}
         </div>
       </details>
+
+      <MetalPriceFields prices={s.metalPrices} onChange={s.setMetalPrice} />
 
       <Field label="Examples">
         <div className="grid grid-cols-2 gap-2">

@@ -316,6 +316,7 @@ export function Atelier() {
           <div className="flex flex-wrap gap-2 text-xs tabular-nums text-muted-foreground">
             <Chip>{result.totalPcs} pcs</Chip>
             <Chip>{formatCarat(result.totalCarat)} ct</Chip>
+            <Chip>Ag925 {result.bezelAg925G.toFixed(2)} g</Chip>
             <Chip>
               leftover {result.leftoverMm > 0 ? "+" : ""}
               {result.leftoverMm.toFixed(1)} mm

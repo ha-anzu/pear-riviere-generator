@@ -20,6 +20,12 @@ import {
   searchByTarget,
   styleVariants,
 } from "./engine";
+import {
+  DEFAULT_METAL_PRICES,
+  normalizeMetalPrices,
+  type AlloyId,
+  type MetalWeights,
+} from "./metal-weight";
 import { newProjectId } from "./history";
 import { PRESETS, type Preset } from "./presets";
 import {
@@ -44,6 +50,7 @@ export type AtelierState = {
   list: ListLine[];
   prices: PriceBracket[];
   pricesDirty: boolean;
+  metalPrices: MetalWeights;
   autoGapFromList: boolean;
   targetCt: string;
   budget: string;
@@ -73,6 +80,7 @@ export type AtelierState = {
   updateListRow: (index: number, patch: Partial<ListLine>) => void;
   setAutoGap: (v: boolean) => void;
   setPrice: (index: number, perCt: number) => void;
+  setMetalPrice: (id: AlloyId, perG: number) => void;
   setTargetCt: (v: string) => void;
   setBudget: (v: string) => void;
   setSelected: (index: number | null) => void;
@@ -150,6 +158,7 @@ const seed = {
   maxWidth: 3,
   list: [{ sizeMm: 5, widthMm: 3, pcs: 38 }] as ListLine[],
   prices: defaultPrices(initialMetal),
+  metalPrices: { ...DEFAULT_METAL_PRICES },
   autoGapFromList: true,
   projectId: "PR-DRAFT",
   projectName: "",
@@ -310,6 +319,14 @@ export const useAtelier = create<AtelierState>((set, get) => ({
       return { ...next, ...compute(next) };
     }),
 
+  setMetalPrice: (id, perG) =>
+    set((s) => ({
+      metalPrices: {
+        ...s.metalPrices,
+        [id]: Number.isFinite(perG) && perG >= 0 ? perG : 0,
+      },
+    })),
+
   setTargetCt: (targetCt) => set({ targetCt }),
   setBudget: (budget) => set({ budget }),
   setSelected: (selectedIndex) => set({ selectedIndex }),
@@ -411,6 +428,7 @@ export const useAtelier = create<AtelierState>((set, get) => ({
         projectId: cfg.projectId || newProjectId(),
         projectName: cfg.projectName ?? "",
         notes: cfg.notes ?? "",
+        metalPrices: normalizeMetalPrices(cfg.metalPrices),
       };
       return { ...next, ...compute(next) };
     }),
@@ -430,6 +448,7 @@ export const useAtelier = create<AtelierState>((set, get) => ({
       maxWidth: s.maxWidth,
       list: s.list,
       prices: s.prices,
+      metalPrices: s.metalPrices,
       autoGapFromList: s.autoGapFromList,
       targetCt: s.targetCt ? Number(s.targetCt) : null,
       budget: s.budget ? Number(s.budget) : null,

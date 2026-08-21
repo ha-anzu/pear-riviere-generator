@@ -136,6 +136,72 @@ function polarLabel(
   );
 }
 
+function nudgeToward(ang: number, target: number, amount: number): number {
+  let d = target - ang;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return ang + Math.sign(d) * Math.min(amount, Math.abs(d));
+}
+
+function hardwareCallout(
+  cx: number,
+  cy: number,
+  R: number,
+  ang: number,
+  title: string,
+  sub: string,
+  stroke: string,
+  markerId: string,
+) {
+  const cos = Math.cos(ang);
+  const sin = Math.sin(ang);
+  const x0 = Number((cx + (R + 26) * cos).toFixed(3));
+  const y0 = Number((cy + (R + 26) * sin).toFixed(3));
+  const x1 = Number((cx + (R + 58) * cos).toFixed(3));
+  const y1 = Number((cy + (R + 58) * sin).toFixed(3));
+  const tx = Number((cx + (R + 74) * cos).toFixed(3));
+  const ty = Number((cy + (R + 74) * sin).toFixed(3));
+  const anchor =
+    Math.abs(cos) < 0.38 ? "middle" : cos > 0 ? "start" : "end";
+  return (
+    <g>
+      <line
+        x1={x1}
+        y1={y1}
+        x2={x0}
+        y2={y0}
+        stroke={stroke}
+        strokeWidth={1.5}
+        markerEnd={`url(#${markerId})`}
+      />
+      <text
+        x={tx}
+        y={ty}
+        textAnchor={anchor}
+        dominantBaseline="middle"
+        fill={stroke}
+        fontSize={9}
+        fontFamily="ui-sans-serif, system-ui, sans-serif"
+        fontWeight={600}
+        letterSpacing="0.1em"
+      >
+        {title}
+        {sub ? (
+          <tspan
+            x={tx}
+            dy="11"
+            fontSize={8}
+            fontWeight={500}
+            letterSpacing="0.14em"
+          >
+            {sub}
+          </tspan>
+        ) : null}
+      </text>
+    </g>
+  );
+}
+
 export function NecklaceRing({
   result,
   selectedIndex,
@@ -150,10 +216,10 @@ export function NecklaceRing({
   gemColors: GemColorKey[];
 }) {
   const t = useT();
-  const size = 720;
+  const size = 800;
   const cx = size / 2;
   const cy = size / 2;
-  const R = 248;
+  const R = 260;
   const metal: Metal = result.metal;
   const paint = METAL_PAINT[metalColor];
 
@@ -185,6 +251,28 @@ export function NecklaceRing({
       aria-label={`${result.lengthIn} inch convertible pear rivière, ${result.braceletIn} inch bracelet back, ${result.totalPcs} stones`}
       onClick={() => onSelect(null)}
     >
+      <defs>
+        <marker
+          id="lock-arrow"
+          markerWidth="7"
+          markerHeight="7"
+          refX="6"
+          refY="3.5"
+          orient="auto"
+        >
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--color-gold)" />
+        </marker>
+        <marker
+          id="conv-arrow"
+          markerWidth="7"
+          markerHeight="7"
+          refX="6"
+          refY="3.5"
+          orient="auto"
+        >
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--color-silver)" />
+        </marker>
+      </defs>
       <VelvetPad />
       <circle
         cx={cx}
@@ -303,8 +391,38 @@ export function NecklaceRing({
 
       {polarLabel(cx, cy, R + 40, -Math.PI / 2, t("back"), "var(--color-muted-foreground)", 10)}
       {polarLabel(cx, cy, R + 40, Math.PI / 2, t("frontMark"), "var(--color-muted-foreground)", 10)}
-      {polarLabel(cx, cy, R + 40, leftAng, t("left"), "var(--color-gold)", 12)}
-      {polarLabel(cx, cy, R + 40, rightAng, t("right"), "var(--color-gold)", 12)}
+      {hardwareCallout(
+        cx,
+        cy,
+        R,
+        leftAng,
+        t("lockCallout"),
+        t("left"),
+        "var(--color-gold)",
+        "lock-arrow",
+      )}
+      {hardwareCallout(
+        cx,
+        cy,
+        R,
+        rightAng,
+        t("lockCallout"),
+        t("right"),
+        "var(--color-gold)",
+        "lock-arrow",
+      )}
+      {converters.map((p) =>
+        hardwareCallout(
+          cx,
+          cy,
+          R,
+          nudgeToward(p.ang, Math.PI / 2, 0.32),
+          t("converterCallout"),
+          p.kind === "conv-l" ? t("left") : t("right"),
+          "var(--color-silver)",
+          "conv-arrow",
+        ),
+      )}
 
       <text
         x={cx}

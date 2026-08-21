@@ -23,6 +23,12 @@ import {
   type Metal,
   type PatternInput,
 } from "./engine.ts";
+import {
+  alloyGramsFromSilver,
+  pearBezelGrams,
+  quoteMetals,
+  silverBezelGrams,
+} from "./metal-weight.ts";
 
 function input(overrides: Partial<PatternInput> = {}): PatternInput {
   const metal = overrides.metal ?? "gold";
@@ -150,4 +156,30 @@ test("all metal, length, bracelet, and gap combinations fit without overflow", (
 test("single-size range remains single size", () => {
   const result = buildPattern(input({ minSize: 5, maxSize: 5, minWidth: 3, maxWidth: 3 }));
   assert.ok(result.stations.every((s) => s.lengthMm === 5 && s.widthMm === 3));
+});
+
+test("4.5 mm Ag925 round bezel is 0.4 g and scales with diameter cubed", () => {
+  assert.equal(silverBezelGrams(4.5), 0.4);
+  assert.equal(silverBezelGrams(9), 3.2);
+  const pear = pearBezelGrams(4.5, 4.5);
+  assert.equal(pear, 0.4);
+  const weights = alloyGramsFromSilver(0.4);
+  assert.ok(weights.k18 > weights.k14);
+  assert.ok(weights.k14 > weights.k9);
+  assert.ok(weights.k9 > weights.ag925);
+  assert.ok(weights.pt950 > weights.k18);
+  assert.equal(weights.ag925, 0.4);
+});
+
+test("pattern result includes bezel grams and metal quotes for five alloys", () => {
+  const result = buildPattern(input({ minSize: 5, maxSize: 5, minWidth: 3, maxWidth: 3 }));
+  assert.ok(result.bezelAg925G > 0);
+  assert.ok(result.metalWeights.k18 > result.metalWeights.ag925);
+  const quotes = quoteMetals(result.bezelAg925G, result.totalCost);
+  assert.equal(quotes.length, 5);
+  assert.deepEqual(
+    quotes.map((q) => q.id),
+    ["k18", "k14", "k9", "ag925", "pt950"],
+  );
+  assert.ok(quotes.every((q) => q.total >= q.stoneCost));
 });

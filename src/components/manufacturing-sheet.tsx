@@ -16,13 +16,15 @@ import { cn } from "@/lib/utils";
 import { useAtelier } from "@/lib/necklace/store";
 import { formatColorPlan } from "@/lib/necklace/gem-colors";
 import { useT, type Msg } from "@/lib/locale";
+import { MetalQuoteTable } from "@/components/metal-quote";
 
 export function ManufacturingSheet({ result }: { result: PatternResult }) {
   const gemColors = useAtelier((state) => state.gemColors);
+  const metalPrices = useAtelier((state) => state.metalPrices);
   const t = useT();
   const copy = async () => {
     await copyText(
-      `${formatBomText(result)}\n\nCOLOR PLAN\n${formatColorPlan(gemColors, result.totalPcs)}`,
+      `${formatBomText(result, metalPrices)}\n\nCOLOR PLAN\n${formatColorPlan(gemColors, result.totalPcs)}`,
     );
     toast.success(t("copied"));
   };
@@ -162,9 +164,15 @@ export function ManufacturingSheet({ result }: { result: PatternResult }) {
         />
       </div>
 
+      <MetalQuoteTable
+        gramsAg={result.bezelAg925G}
+        stoneCost={result.totalCost}
+        prices={metalPrices}
+      />
+
       <p className="text-xs tabular-nums text-muted-foreground">
         Total {result.totalPcs} pcs · {formatCarat(result.totalCarat)} ct ·{" "}
-        {formatMoney(result.totalCost)} · gap {result.gapMm.toFixed(2)} mm ·
+        {t("stoneCost")} {formatMoney(result.totalCost)} · Ag925 {result.bezelAg925G.toFixed(2)} g · gap {result.gapMm.toFixed(2)} mm ·
         leftover {result.leftoverMm > 0 ? "+" : ""}
         {result.leftoverMm.toFixed(1)} mm of {result.lengthMm.toFixed(1)} mm
       </p>

@@ -7,6 +7,22 @@ import {
   resolvePearSku,
   type PearSku,
 } from "./pear-catalog.ts";
+import {
+  alloyGramsFromSilver,
+  bezelGramsPear,
+  quoteMetals,
+  type MetalWeights,
+} from "./metal-weight.ts";
+
+export type { AlloyId, MetalQuote, MetalWeights } from "./metal-weight.ts";
+export {
+  ALLOY_ORDER,
+  ALLOYS,
+  DEFAULT_METAL_PRICES,
+  normalizeMetalPrices,
+  quoteMetals,
+  pearBezelGrams,
+} from "./metal-weight.ts";
 
 export type { PearSku };
 export {
@@ -211,6 +227,8 @@ export type PatternResult = {
   necklace: SegmentFit;
   findings: FindingLine[];
   assembly: AssemblyStep[];
+  bezelAg925G: number;
+  metalWeights: MetalWeights;
 };
 
 export type Variant = {
@@ -710,6 +728,10 @@ function layoutOnce(
   const totalCarat = round4(bom.reduce((a, l) => a + l.carat, 0));
   const totalCost = round2(bom.reduce((a, l) => a + l.cost, 0));
   const lock = round2(LOCK_STONES * (d.widthMm + gap));
+  const bezelAg925G = bezelGramsPear(
+    stations.map((s) => ({ lengthMm: s.lengthMm, widthMm: s.widthMm })),
+  );
+  const metalWeights = alloyGramsFromSilver(bezelAg925G);
 
   return {
     stones,
@@ -718,6 +740,8 @@ function layoutOnce(
     totalPcs: stones.length,
     totalCarat,
     totalCost,
+    bezelAg925G,
+    metalWeights,
     lengthIn: input.lengthIn,
     lengthMm: length,
     braceletIn,
@@ -955,10 +979,18 @@ export function searchByTarget(
   }));
 }
 
-export function formatBomText(result: PatternResult): string {
+export function formatBomText(
+  result: PatternResult,
+  metalPrices?: MetalWeights,
+): string {
   const metal = result.metal === "gold" ? "Gold" : "Silver";
   const kind =
     result.minSize === result.maxSize ? "single" : "graduated";
+  const quotes = quoteMetals(
+    result.bezelAg925G,
+    result.totalCost,
+    metalPrices,
+  );
   const lines = [
     `${result.lengthIn}″ ${metal} pear rivière · ${kind}`,
     `Back bracelet ${result.braceletIn}″ · front ${result.necklaceIn}″`,
@@ -986,8 +1018,13 @@ export function formatBomText(result: PatternResult): string {
     "ASSEMBLY",
     ...result.assembly.map((s) => `${s.n}. ${s.title} — ${s.detail}`),
     "",
-    `TOTAL ${result.totalPcs} pcs · ${formatCarat(result.totalCarat)} ct · ${formatMoney(result.totalCost)}`,
+    `TOTAL ${result.totalPcs} pcs · ${formatCarat(result.totalCarat)} ct · stones ${formatMoney(result.totalCost)}`,
     `Gap ${result.gapMm.toFixed(2)} mm · ${spanOf(result.stones, result.gapMm, result.ratio).toFixed(1)} mm of ${result.lengthMm.toFixed(1)} mm`,
+    `Bezel metal Ag925 ${result.bezelAg925G.toFixed(2)} g · 4.5 mm round = 0.4 g · pear √(L×W)`,
+    ...quotes.map(
+      (q) =>
+        `  ${q.label} ${q.grams.toFixed(2)} g × ${formatMoney(q.perG)}/g = ${formatMoney(q.metalCost)} · total ${formatMoney(q.total)}`,
+    ),
   ];
   return lines.join("\n");
 }
@@ -1020,14 +1057,25 @@ export function formatMoney(n: number): string {
   }).format(n);
 }
 
-export function csvBom(result: PatternResult): string {
+export function csvBom(
+  result: PatternResult,
+  metalPrices?: MetalWeights,
+): string {
   const header = "unit,length_mm,width_mm,depth_mm,pcs,carat,usd_per_ct,cost_usd";
   const row = (unit: string, l: BomLine) =>
     `${unit},${l.lengthMm},${l.widthMm},${l.depthMm},${l.pcs},${l.carat.toFixed(4)},${l.perCt},${l.cost.toFixed(2)}`;
+  const quotes = quoteMetals(
+    result.bezelAg925G,
+    result.totalCost,
+    metalPrices,
+  );
   const rows = [
     ...result.bracelet.bom.map((l) => row("bracelet", l)),
     ...result.necklace.bom.map((l) => row("necklace", l)),
-    `TOTAL,all,all,all,${result.totalPcs},${result.totalCarat.toFixed(4)},,${result.totalCost.toFixed(2)}`,
+    `STONES,all,all,all,${result.totalPcs},${result.totalCarat.toFixed(4)},,${result.totalCost.toFixed(2)}`,
+    ...quotes.map(
+      (q) => `metal,${q.id},,,${q.grams.toFixed(3)},,,${q.total.toFixed(2)}`,
+    ),
     ...result.findings.map(
       (f) => `finding,${f.lengthMm},${f.widthMm},,${f.pcs},,,`,
     ),
@@ -1057,4 +1105,5 @@ export type SavedConfig = {
   notes: string;
   gemColors?: string[];
   colorScope?: "stone" | "pair" | "all";
+  metalPrices?: MetalWeights;
 };

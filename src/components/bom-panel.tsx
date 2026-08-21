@@ -16,11 +16,11 @@ import { cn } from "@/lib/utils";
 import { formatColorPlan, gemColorCounts } from "@/lib/necklace/gem-colors";
 
 export function BomPanel() {
-  const { result, variants, matches, applyVariant, gemColors } = useAtelier();
+  const { result, variants, matches, applyVariant, gemColors, metalPrices } = useAtelier();
 
   const copy = async () => {
     await copyText(
-      `${formatBomText(result)}\n\nCOLOR PLAN\n${formatColorPlan(gemColors, result.totalPcs)}`,
+      `${formatBomText(result, metalPrices)}\n\nCOLOR PLAN\n${formatColorPlan(gemColors, result.totalPcs)}`,
     );
     toast.success("BOM copied");
   };
@@ -29,7 +29,7 @@ export function BomPanel() {
     const colorRows = gemColorCounts(gemColors, result.totalPcs)
       .map((item) => `color,${item.label},${item.count}`)
       .join("\n");
-    const blob = new Blob([`${csvBom(result)}\n${colorRows}`], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([`${csvBom(result, metalPrices)}\n${colorRows}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
